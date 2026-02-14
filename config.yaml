@@ -7,6 +7,7 @@ Exposure_Featuers:
 - MA_Ratio
 - Close_Pos_Range
 - Intraday_Return
+- Price_vs_MA20
 Portfolio_Weights:
   gold: 0.32
   nifty: 0.28
