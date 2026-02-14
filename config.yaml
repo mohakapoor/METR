@@ -1,0 +1,20 @@
+Exposure_Featuers:
+- Ret_3d
+- Ret_5d
+- Ret_20d
+- Vol_10d
+- Vol_Ratio
+- MA_Ratio
+- Close_Pos_Range
+- Intraday_Return
+Portfolio_Weights:
+  gold: 0.32
+  nifty: 0.28
+  usdinr: 0.4
+Regime_Featuers:
+- Vol_10d
+- Vol_20d
+- Vol_Ratio
+- Abs_Return
+- Rolling_Abs_Return
+- Rolling_Range
