@@ -19,3 +19,4 @@ Regime_Features:
 - Abs_Return
 - Rolling_Abs_Return
 - Rolling_Range
+N_Splits: 5
