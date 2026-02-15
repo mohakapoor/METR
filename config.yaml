@@ -1,22 +1,33 @@
 Exposure_Features:
+- Ret_1d
 - Ret_3d
 - Ret_5d
 - Ret_20d
-- Vol_10d
+- Vol_5d
+- Vol_20d
 - Vol_Ratio
 - MA_Ratio
 - Close_Pos_Range
 - Intraday_Return
 - Price_vs_MA20
+- MACD_Hist
+- RSI
+- ROC_10
+- BB_Pct
+- ATR_Pct
+- Ret_1d_Lag1
+- Ret_1d_Lag2
+- Ret_1d_Lag3
+N_Splits: 5
 Portfolio_Weights:
   gold: 0.32
   nifty: 0.28
   usdinr: 0.4
 Regime_Features:
-- Vol_10d
+- Vol_5d
 - Vol_20d
 - Vol_Ratio
 - Abs_Return
 - Rolling_Abs_Return
 - Rolling_Range
-N_Splits: 5
+- ATR_Pct
