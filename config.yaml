@@ -1,4 +1,4 @@
-Exposure_Featuers:
+Exposure_Features:
 - Ret_3d
 - Ret_5d
 - Ret_20d
@@ -12,7 +12,7 @@ Portfolio_Weights:
   gold: 0.32
   nifty: 0.28
   usdinr: 0.4
-Regime_Featuers:
+Regime_Features:
 - Vol_10d
 - Vol_20d
 - Vol_Ratio

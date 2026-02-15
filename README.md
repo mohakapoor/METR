@@ -36,6 +36,13 @@ METR/
 *   **Labeling:** Generates forward-looking labels based on 3-day returns for supervised learning.
 *   **Output:** Processes data into training and testing sets, saved in `data/processed/`.
 
+### 3. Data Exploration & Insights
+*   **Asset Correlation:**
+    *   **Nifty vs. Gold:** Low correlation, indicating potential diversification benefits.
+    *   **USDINR:** Acts as a regime filter, often spiking during stress periods (negative correlation with Nifty).
+*   **Stationarity:** Checks confirm that raw prices are non-stationary, but percentage returns (`Ret_1d`, `Ret_3d`) are stationary, validating their use as model features.
+*   **Distribution:** Daily returns exhibit "fat tails" (kurtosis > 3), justifying the use of robust models like XGBoost over linear regression.
+
 ## Getting Started
 
 ### Prerequisites
