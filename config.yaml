@@ -31,3 +31,4 @@ Regime_Features:
 - Rolling_Abs_Return
 - Rolling_Range
 - ATR_Pct
+Threshold: 0.6
