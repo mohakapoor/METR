@@ -1,7 +1,9 @@
 import polars as pl
 import numpy as np  
 import yfinance as yf   
-
+"""
+Fetch Data using Yfiance library
+"""
 tickers = {"Nifty50":"^NSEI","Gold":"GOLDBEES.NS","USDINR":"USDINR=X"}
 
 for name,tick in tickers.items():
