@@ -31,13 +31,20 @@ def generate_barriers(df,k,T):
     return labels
 
 
-df = pl.read_parquet(r"data\processed\train\nifty.parquet")
+df1 = pl.read_parquet(r"data\processed\train\nifty.parquet")
+df2 = pl.read_parquet(r"data\processed\train\gold.parquet")
+df3 = pl.read_parquet(r"data\processed\train\usdinr.parquet")
 
-for k in [0.5, 0.75, 1.0, 1.5]:
-    for t in [3,5,10]:
-        labels = generate_barriers(df, k=k, T=t)
-        counts = pl.Series("TB_Label", labels).value_counts().sort("TB_Label")
-        total = counts["count"].sum()
-        counts = counts.with_columns((pl.col("count") / total * 100).round(1).alias("pct"))
-        print(f"\nk={k}, T={t}:")
-        print(counts)
+
+with open("reports/tripple_barrier/nifty_grid_results.txt", "w",encoding="utf-8") as f:
+    for k in [0.5, 0.75, 1.0, 1.5]:
+        for t in [3, 5, 10]:
+            labels = generate_barriers(df1, k=k, T=t)
+            counts = pl.Series("TB_Label", labels).value_counts().sort("TB_Label")
+            total = counts["count"].sum()
+            counts = counts.with_columns((pl.col("count") / total * 100).round(1).alias("pct"))
+            header = f"\nk={k}, T={t}:"
+            print(header)
+            print(counts)
+            f.write(header + "\n")
+            f.write(str(counts) + "\n")
