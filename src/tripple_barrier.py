@@ -28,9 +28,16 @@ def generate_barriers(df,k,T):
             else:
                 pass
         labels.append(label)
-    df['Label'] = labels
-    return df
+    return labels
 
 
 df = pl.read_parquet(r"data\processed\train\nifty.parquet")
 
+for k in [0.5, 0.75, 1.0, 1.5]:
+    for t in [3,5,10]:
+        labels = generate_barriers(df, k=k, T=t)
+        counts = pl.Series("TB_Label", labels).value_counts().sort("TB_Label")
+        total = counts["count"].sum()
+        counts = counts.with_columns((pl.col("count") / total * 100).round(1).alias("pct"))
+        print(f"\nk={k}, T={t}:")
+        print(counts)
