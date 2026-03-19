@@ -32,3 +32,8 @@ Regime_Features:
 - Rolling_Range
 - ATR_Pct
 Threshold: 0.6
+Triple_Barrier:
+  T: 3
+  k_nifty: 1.5
+  k_gold: 1.75
+  k_usdinr: 1.5
