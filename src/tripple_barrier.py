@@ -2,7 +2,7 @@ import polars as pl
 import numpy as np
 
 
-def generate_barriers(df,k,T):
+def generate_barriers(df,k_upper,k_lower,T):
     labels = []
     opens = df['Open'].to_list()
     high = df['High'].to_list()
@@ -12,8 +12,8 @@ def generate_barriers(df,k,T):
         label = 0 # base case that T days passed without anything
         p0 = opens[i+1]
         sigma = vol_20d[i]
-        p_upper = p0*(1+k*sigma)
-        p_lower = p0*(1-k*sigma)
+        p_upper = p0*(1+k_upper*sigma)
+        p_lower = p0*(1-k_lower*sigma)
 
         for j in range(1,T+1):
             if(high[i+j] >= p_upper) and (low[i+j] <= p_lower):
@@ -36,7 +36,7 @@ df2 = pl.read_parquet(r"data\processed\train\gold.parquet")
 df3 = pl.read_parquet(r"data\processed\train\usdinr.parquet")
 
 
-with open("reports/tripple_barrier/nifty_grid_results.txt", "w",encoding="utf-8") as f:
+with open("reports/tripple_barrier/nifty_grid_results.txt", "w",encoding="utf-8") as f: 
     for k in [0.5, 0.75, 1.0, 1.5]:
         for t in [3, 5, 10]:
             labels = generate_barriers(df1, k=k, T=t)
