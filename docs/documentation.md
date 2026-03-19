@@ -232,16 +232,21 @@ Where $\sigma$ is the daily volatility (computed as the rolling 20-day standard 
 - Reflects actual directional conviction.
 
 ### 8.1 Chosen Parameters ($T=3$)
-After conducting a multi-asset grid analysis (see `docs/observations.md`), we locked in the following parameters:
+After conducting a multi-asset grid analysis, resolving intraday tie-breaker edge cases (defaulting to 0), and switching the primary evaluation metric from mathematical **Balance Score** to **Return Spread** (see `docs/observations.md`), I locked in the following parameters:
 
-| Asset | k (Barrier Width) | T (Time Horizon) | Expected Class Balance (-1 / 0 / +1) |
-|---|---|---|---|
-| **Nifty** | $1.5\sigma$ | 3 Days | 35.6% / 33.9% / 30.5% |
-| **Gold** | $1.75\sigma$ | 3 Days | 41.6% / 31.2% / 27.3% |
-| **USDINR** | $1.5\sigma$ | 3 Days | 34.7% / 31.2% / 34.1% |
+| Asset | k (Barrier Width) | T (Time Horizon) | Expected Class Balance (-1 / 0 / +1) | Return Spread |
+|---|---|---|---|---|
+| **Nifty** | $1.5\sigma$ | 3 Days | 35.2% / 34.3% / 30.5% | 2.70% |
+| **Gold** | $1.75\sigma$ | 3 Days | 38.7% / 34.1% / 27.3% | 1.83% |
+| **USDINR** | $1.5\sigma$ | 3 Days | 33.3% / 32.7% / 34.1% | 0.73% |
 
 **Reasoning:**
-Mathematical grid search favored $T=5$ with extreme barriers ($2.5\sigma$). However, expecting a financial asset to move $2.5\sigma$ in just 5 days forces the model to hunt for highly improbable outlier events. We chose $T=3$ with tighter barriers ($1.5\sigma - 1.75\sigma$) because it represents a **realistic, tradeable move** while still preserving a ~30% timeout class to successfully filter out market noise. Gold requires slightly wider barriers ($1.75\sigma$) due to its higher relative intraday volatility.
+While traditional mathematical grid search favored $T=5$ with extreme barriers ($2.5\sigma$) just to perfectly balance the classes to exactly 33.3%, expecting a financial asset to move $2.5\sigma$ in 5 days forces the model to hunt for highly improbable outlier events. 
+
+I chose $T=3$ with tighter barriers ($1.5\sigma - 1.75\sigma$) and selected them by maximizing the **Return Spread** (+1 Mean Return minus -1 Mean Return). This ensures the labels are capturing a real, tradeable directional edge rather than just perfectly dividing noise into mathematical thirds. This configuration still preserves a healthy ~33-34% timeout class (`0`), successfully filtering out non-directional market chop. Gold requires slightly wider barriers ($1.75\sigma$) due to its naturally higher intraday volatility.
+
+**Final Insight on Labeling:**
+The final labeling scheme demonstrates that predictive signal strength varies significantly across assets, with equity indices exhibiting stronger directional separability than FX markets. This suggests that the limitation is not purely model-based, but inherent to the underlying market dynamics.
 
 ---
 
