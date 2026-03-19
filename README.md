@@ -50,3 +50,6 @@ This repository is primarily structured as a chronological  study.You can explor
 1. **[Documentation & Methodology](docs/documentation.md):** The core findings, architectures, and theoretical foundations of the METR experiment.
 2. **[Grid Search Observations](docs/observations.md):** Detailed logs, logic patches, and empirical parameters chosen specifically for each asset.
 3. **[Execution Roadmap](docs/project_plan.md):** The chronological phases tracking the project's progression.
+
+## References
+* [Triple Barrier Labelling Algorithm](https://williamsantos.me/posts/2022/triple-barrier-labelling-algorithm/) by William Santos – *Implementation guidance for the forward-scanning volatility-adaptive labeling method.*
