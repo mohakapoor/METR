@@ -1,0 +1,11 @@
+
+polars>=0.20.0
+numpy
+pandas
+xgboost
+scikit-learn
+matplotlib
+seaborn
+notebook
+yfinance
+pyyaml
