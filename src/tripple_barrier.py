@@ -29,9 +29,8 @@ def generate_barriers(df, k, T):
         p_upper = p0*(1+k*sigma)
         p_lower = p0*(1-k*sigma)
         
-        # Guard against zero opens
-        if opens[i] != 0:
-            returns[i] = (close_prices[i+T] - opens[i]) / opens[i]
+        if i+1 < n and opens[i+1] != 0:
+            returns[i] = (close_prices[i+T] - opens[i+1]) / opens[i+1]
             
         for j in range(1, T+1):
             if i+j >= n: # Safety bounds check
