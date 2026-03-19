@@ -9,32 +9,47 @@ with open(CONFIG_PATH, "r") as f:
 FEATURES = config["Exposure_Features"]
 
 def generate_barriers(df, k, T):
-    labels = []
+    n = len(df)
+    labels = [None] * n  # Pad with None so length matches df exactly
+    returns = [None] * n # Pad with None
+    
     opens = df['Open'].to_list()
+    close_prices = df['Close'].to_list()
     high = df['High'].to_list()
     low = df['Low'].to_list()
     vol_20d = df['Vol_20d'].to_list()
-    for i in range(len(opens)-T-1):
+    
+    for i in range(n - T - 1):
+        if opens[i+1] == 0 or np.isnan(vol_20d[i]):
+            continue # Skip invalid rows
+            
         label = 0 # base case that T days passed without anything
         p0 = opens[i+1]
         sigma = vol_20d[i]
         p_upper = p0*(1+k*sigma)
         p_lower = p0*(1-k*sigma)
-
-        for j in range(1,T+1):
-            if(high[i+j] >= p_upper) and (low[i+j] <= p_lower):
-                label = -1 # assuming low was first to be safe
+        
+        # Guard against zero opens
+        if opens[i] != 0:
+            returns[i] = (close_prices[i+T] - opens[i]) / opens[i]
+            
+        for j in range(1, T+1):
+            if i+j >= n: # Safety bounds check
                 break
-            elif(high[i+j] >= p_upper):
+                
+            if (high[i+j] >= p_upper) and (low[i+j] <= p_lower):
+                label = 0 # assuming low was first to be safe
+                break
+            elif (high[i+j] >= p_upper):
                 label = 1 # profit
                 break
-            elif(low[i+j] <= p_lower):
+            elif (low[i+j] <= p_lower):
                 label = -1 # stop loss
                 break
-            else:
-                pass
-        labels.append(label)
-    return labels
+                
+        labels[i] = label
+        
+    return labels, returns
 
 
 MAX_CLASS_PCT = 45.0  # hard filter: no single class above this
@@ -51,73 +66,96 @@ def passes_filter(pct_neg1, pct_0, pct_pos1):
     return max(pct_neg1, pct_0, pct_pos1) <= MAX_CLASS_PCT
 
 
-# ============================================
-# 3. GRID EVALUATION + PLOT
-# ============================================
+
 K_VALUES = [0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.5,3.0]
 T_VALUES = [3, 5,10]
 
 
 def evaluate_triple_barrier_grid(assets):
     for name, df in assets:
-        results = []  # (label_str, pct_neg1, pct_0, pct_pos1, bal_score, passed)
+        results = []  # (label_str, pct_neg1, pct_0, pct_pos1, bal_score, passed, t, return_spread)
 
         with open(f"reports/tripple_barrier/{name}_grid_results.txt", "w", encoding="utf-8") as f:
+            f.write(name.upper() + ":\n")
             for k in K_VALUES:
                 for t in T_VALUES:
-                    labels = generate_barriers(df, k=k, T=t)
-                    counts = pl.Series("TB_Label", labels).value_counts().sort("TB_Label")
-                    total = counts["count"].sum()
+                    
+                    labels, returns = generate_barriers(df, k=k, T=t)
+                    
+                    # Compute aggregations skipping None values at the end
+                    res_df = pl.DataFrame({"TB_Label": labels, "return": returns}).drop_nulls("TB_Label")
+                    
+                    counts = (
+                        res_df.group_by("TB_Label")
+                        .agg([
+                            pl.len().alias("count"),
+                            (pl.col("return").mean() * 100).alias("mean_return(%)") # Convert to percentage
+                        ])
+                        .sort("TB_Label")
+                    )
+                    
+                    total = res_df.height
                     counts = counts.with_columns(
                         (pl.col("count") / total * 100).round(1).alias("pct")
                     )
 
-                    # extract percentages (handle missing classes)
-                    pct_map = dict(zip(
-                        counts["TB_Label"].to_list(),
-                        counts["pct"].to_list()
-                    ))
+                    # Extract percentages
+                    pct_map = dict(zip(counts["TB_Label"].to_list(), counts["pct"].to_list()))
                     pct_neg1 = pct_map.get(-1, 0.0)
                     pct_0 = pct_map.get(0, 0.0)
                     pct_pos1 = pct_map.get(1, 0.0)
+                    
+                    # Extract mean returns for the spread calculation
+                    ret_map = dict(zip(counts["TB_Label"].to_list(), counts["mean_return(%)"].to_list()))
+                    mean_ret_neg1 = ret_map.get(-1, 0.0)
+                    mean_ret_pos1 = ret_map.get(1, 0.0)
+                    return_spread = mean_ret_pos1 - mean_ret_neg1
 
-                    # score
+                    # Score
                     bal = balance_score(pct_neg1, pct_0, pct_pos1)
                     passed = passes_filter(pct_neg1, pct_0, pct_pos1)
                     tag = "✓" if passed else "✗"
 
                     combo_label = f"k={k}, T={t}"
-                    results.append((combo_label, pct_neg1, pct_0, pct_pos1, bal, passed))
+                    results.append((combo_label, pct_neg1, pct_0, pct_pos1, bal, passed, t, return_spread))
 
-                    header = f"\n{combo_label}: balance={bal:.1f} [{tag}]"
+                    header = f"\n{combo_label}: balance={bal:.1f} [{tag}] | spread={return_spread:.2f}%"
                     print(f"[{name}] {header}")
-                    print(counts)
+                    
+                    # Print and format DataFrame nicely with only 3 decimal spots for return
+                    out_counts = counts.select([
+                        pl.col("TB_Label").alias("label"),
+                        pl.col("count"),
+                        pl.col("pct").alias("ratio(%)"),
+                        pl.col("mean_return(%)").round(3)
+                    ])
+                    print(out_counts)
                     f.write(header + "\n")
-                    f.write(str(counts) + "\n")
+                    f.write(str(out_counts) + "\n")
 
-            # find best combo (lowest balance score among those that pass filter)
-            passing = [r for r in results if r[5]]
-            if passing:
-                best = min(passing, key=lambda x: x[4])
-                summary = f"\n{'='*50}\nBEST for {name}: {best[0]}  (balance={best[4]:.1f})\n{'='*50}"
-            else:
-                best = min(results, key=lambda x: x[4])
-                summary = f"\n{'='*50}\nBEST for {name} (no combo passed {MAX_CLASS_PCT}% filter): {best[0]}  (balance={best[4]:.1f})\n{'='*50}"
-            print(summary)
-            f.write(summary + "\n")
+        # --- PLOT (T=3 ONLY) ---
+        t3_results = [r for r in results if r[6] == 3]
+        if not t3_results:
+            print(f"No T=3 runs found for {name}, skipping plot.")
+            continue
 
-        # --- PLOT ---
-        labels_list = [r[0] for r in results]
-        pct_neg1 = [r[1] for r in results]
-        pct_0 = [r[2] for r in results]
-        pct_pos1 = [r[3] for r in results]
-        scores = [r[4] for r in results]
-        passed_list = [r[5] for r in results]
+        labels_list = [r[0] for r in t3_results]
+        pct_neg1 = [r[1] for r in t3_results]
+        pct_0 = [r[2] for r in t3_results]
+        pct_pos1 = [r[3] for r in t3_results]
+        scores = [r[4] for r in t3_results]
+        passed_list = [r[5] for r in t3_results]
+        spreads = [r[7] for r in t3_results]
 
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), gridspec_kw={'height_ratios': [3, 1]})
-        fig.suptitle(f"Triple Barrier Grid — {name.upper()} (max class ≤ {MAX_CLASS_PCT}%)", fontsize=14, fontweight='bold')
+        fig = plt.figure(figsize=(15, 8))
+        gs = fig.add_gridspec(2, 2, width_ratios=[1, 1], height_ratios=[1, 1])
+        fig.suptitle(f"Triple Barrier Grid (T=3) — {name.upper()} (max class ≤ {MAX_CLASS_PCT}%)", fontsize=16, fontweight='bold')
 
-        # bar chart: label distribution
+        ax1 = fig.add_subplot(gs[0, 0])
+        ax2 = fig.add_subplot(gs[1, 0])
+        ax3 = fig.add_subplot(gs[:, 1])
+
+        # ax1: label distribution
         x = np.arange(len(labels_list))
         width = 0.25
         ax1.bar(x - width, pct_neg1, width, label='-1 (stop loss)', color='#e74c3c')
@@ -127,36 +165,43 @@ def evaluate_triple_barrier_grid(assets):
         ax1.set_ylabel('Percentage (%)')
         ax1.set_title('Label Distribution')
         ax1.set_xticks(x)
-        ax1.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=7)
+        ax1.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
         ax1.legend()
         ax1.set_ylim(0, 85)
 
-        # bar chart: balance score (lower = better)
+        # ax2: balance score
         bar_colors = ['#2ecc71' if p else '#e74c3c' for p in passed_list]
         if any(passed_list):
             best_score = min(s for s, p in zip(scores, passed_list) if p)
             best_idx = next(i for i, (s, p) in enumerate(zip(scores, passed_list)) if p and s == best_score)
-            bar_colors[best_idx] = '#f39c12'  # highlight best
+            bar_colors[best_idx] = '#f39c12'
         ax2.bar(x, scores, color=bar_colors, width=0.5)
         ax2.set_ylabel('Balance Score')
-        ax2.set_title('Distance from Perfect Balance (lower = better, green = passed filter, red = failed)')
+        ax2.set_title('Distance from Perfect Balance (lower = better)')
         ax2.set_xticks(x)
-        ax2.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=7)
+        ax2.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
+
+        # ax3: return spread
+        ax3.plot(x, spreads, marker='o', color='#3498db', linewidth=2)
+        ax3.axhline(0, color='gray', linestyle='--', alpha=0.5)
+        ax3.set_ylabel('Spread (%)')
+        ax3.set_title('Return Spread (+1 mean vs -1 mean)')
+        ax3.set_xticks(x)
+        ax3.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
 
         plt.tight_layout()
-        plt.savefig(f"reports/tripple_barrier/{name}_grid_plot.png", dpi=150)
+        out_path = f"reports/tripple_barrier/{name}_grid_Results_t3.png"
+        plt.savefig(out_path, dpi=150)
         plt.close()
-        print(f"Plot saved: reports/tripple_barrier/{name}_grid_plot.png")
+        print(f"Plot saved: {out_path}")
 
 
-# ============================================
-# 4. RUN
-# ============================================
+
 if __name__ == "__main__":
     df1 = pl.read_parquet(r"data\processed\train\nifty.parquet")
     df2 = pl.read_parquet(r"data\processed\train\gold.parquet")
     df3 = pl.read_parquet(r"data\processed\train\usdinr.parquet")
-
+    print(df1.columns)
     assets = [
         ("nifty", df1),
         ("gold", df2),
