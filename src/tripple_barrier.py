@@ -11,7 +11,7 @@ FEATURES = config["Exposure_Features"]
 def generate_barriers(df, k, T):
     n = len(df)
     labels = [None] * n  # Pad with None so length matches df exactly
-    returns = [None] * n # Pad with None
+    returns = [None] * n # same
     
     opens = df['Open'].to_list()
     close_prices = df['Close'].to_list()
@@ -38,7 +38,7 @@ def generate_barriers(df, k, T):
                 break
                 
             if (high[i+j] >= p_upper) and (low[i+j] <= p_lower):
-                label = 0 # assuming low was first to be safe
+                label = 0 # marking as neutral
                 break
             elif (high[i+j] >= p_upper):
                 label = 1 # profit
@@ -68,7 +68,9 @@ def passes_filter(pct_neg1, pct_0, pct_pos1):
 
 
 K_VALUES = [0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.5,3.0]
-T_VALUES = [3, 5,10]
+T_VALUES = [3, 5,10]  
+
+# After running multiple T values i realised T = 3 is the best because higher values dont offer significantly better improvements and add ambiguity 
 
 
 def evaluate_triple_barrier_grid(assets):
@@ -89,7 +91,7 @@ def evaluate_triple_barrier_grid(assets):
                         res_df.group_by("TB_Label")
                         .agg([
                             pl.len().alias("count"),
-                            (pl.col("return").mean() * 100).alias("mean_return(%)") # Convert to percentage
+                            (pl.col("return").mean() * 100).alias("mean_return(%)") #make it %
                         ])
                         .sort("TB_Label")
                     )
@@ -114,12 +116,12 @@ def evaluate_triple_barrier_grid(assets):
                     # Score
                     bal = balance_score(pct_neg1, pct_0, pct_pos1)
                     passed = passes_filter(pct_neg1, pct_0, pct_pos1)
-                    tag = "✓" if passed else "✗"
+
 
                     combo_label = f"k={k}, T={t}"
                     results.append((combo_label, pct_neg1, pct_0, pct_pos1, bal, passed, t, return_spread))
 
-                    header = f"\n{combo_label}: balance={bal:.1f} [{tag}] | spread={return_spread:.2f}%"
+                    header = f"\n{combo_label}: balance={bal:.1f} | spread={return_spread:.2f}%"
                     print(f"[{name}] {header}")
                     
                     # Print and format DataFrame nicely with only 3 decimal spots for return
@@ -135,9 +137,9 @@ def evaluate_triple_barrier_grid(assets):
 
         # --- PLOT (T=3 ONLY) ---
         t3_results = [r for r in results if r[6] == 3]
-        if not t3_results:
-            print(f"No T=3 runs found for {name}, skipping plot.")
-            continue
+        # if not t3_results:
+        #     print(f"No T=3 runs found for {name}, skipping plot.")
+        #     continue
 
         labels_list = [r[0] for r in t3_results]
         pct_neg1 = [r[1] for r in t3_results]
@@ -201,7 +203,6 @@ if __name__ == "__main__":
     df1 = pl.read_parquet(r"data\processed\train\nifty.parquet")
     df2 = pl.read_parquet(r"data\processed\train\gold.parquet")
     df3 = pl.read_parquet(r"data\processed\train\usdinr.parquet")
-    print(df1.columns)
     assets = [
         ("nifty", df1),
         ("gold", df2),
