@@ -1,58 +1,52 @@
 # METR — Market Exposure Timing vs Randomness
 
-## Overview
-**METR** is a controlled empirical study designed to investigate whether structured machine learning models can outperform pure randomness in short-term asset allocation. The project focuses on a fixed 3-day holding period for three distinct asset classes: Equity (NIFTY), Gold, and Currency (USDINR).
+## Overview & Ideology
+**Can a machine learning model trained purely on historical price/volume data—without any live sentiment, news, macro indicators, or order flow—actually beat random market entries in the long term?**
 
-> **Current Status:** The project is in the **Data Processing** phase. Data ingestion and feature engineering pipelines are implemented.
+**METR** is a controlled empirical study designed to isolate true statistical predictive edge from market noise and lucky streaks. By restricting the models to exclusively mathematical market microstructure (momentum, volatility regimes, mean reversion) and forcing a fixed 3-day holding period, the project evaluates whether standard assets (Equities, Commodities, FX) possess predictable short-term inefficiencies.
+
+> **Current Status:** Phase 3 — **Cross-Asset Feature Engineering & Data Pipeline**. Baseline binary models and Triple Barrier Labeling optimization are complete. We are now integrating cross-market relative strength features before retraining a Unified Multi-Class machine learning model.
+
+## Core Experiments
+1. **Model vs. Random (The Edge Test):** Evaluating the model's predictive capabilities against a massive 1,000-iteration Monte Carlo simulation of purely random (coin-flip) trading strategies to ensure genuine statistical outperformance.
+2. **Unified vs. Isolated Modeling (The Context Test):** Comparing single-asset models (e.g., Nifty predicting Nifty) against a Unified cross-asset model to see if broader macro-context can be inferred solely from relative price action.
 
 ## Project Structure
-```
+```text
 METR/
 ├── data/
-│   ├── raw/            # Raw parquet files from Yahoo Finance
-│   └── processed/      # Cleaned data with features (train/test splits)
-├── docs/               # Project documentation and plans
+│   ├── raw/                 # Raw OHLC parquet files (yfinance)
+│   └── processed/           # Engineered features and Target labels
+├── docs/                    # Extensive research notes, observations, and plans
+│   ├── documentation.md     # In-depth findings and methodology 
+│   ├── project_plan.md      # Chronological execution roadmap
+│   └── observations.md      # Empirical grid search results and tuning logs
 ├── src/
-│   ├── fetch_data.py   # Script to download historical data
-│   └── data_cleaning.ipynb # Feature engineering and preprocessing
-├── config.yaml         # Configuration configurations
-└── README.md           # This file
+│   ├── fetch_data.py        # Automated historical data ingestion pipeline
+│   ├── data_cleaning.ipynb  # Feature engineering & Triple Barrier integration
+│   ├── tripple_barrier.py   # Forward-scanning dynamic labeling algorithm
+│   ├── train_exposure.py    # XGBoost training & regularization 
+│   ├── evaluate_model.py    # Generates diagnostic plots (ROC, Confusion Matrix)
+│   ├── benchmark_random.py  # Monte Carlo simulation engine
+│   └── feature_analysis.py  # Importance and Correlation extraction
+├── config.yaml              # Global project config (features, thresholds, weights)
+└── README.md                # Project guide (this file)
 ```
 
-## Features & Functionality
-
-### 1. Data Ingestion
-*   **Source:** Yahoo Finance (`yfinance`).
-*   **Assets:** Nifty50 (`^NSEI`), Gold (`GOLDBEES.NS`), USDINR (`USDINR=X`).
-*   **Automation:** `src/fetch_data.py` automates the download of daily and hourly data, saving them as Parquet files in `data/raw/`.
-
-### 2. Data Processing & Feature Engineering
-*   **Cleaning:** Filters out invalid dates and handles missing values.
-*   **Feature Generation:**
-    *   **Returns:** 1-day, 3-day, 5-day, and 20-day percentage changes.
-    *   **Volatility:** Rolling standard deviations (5d, 10d, 20d) and volatility ratios.
-    *   **Trend:** Moving averages (5d, 20d) and their ratios.
-    *   **Intraday:** Close-to-Open and High-Low range dynamics.
-*   **Labeling:** Generates forward-looking labels based on 3-day returns for supervised learning.
-*   **Output:** Processes data into training and testing sets, saved in `data/processed/`.
-
-### 3. Data Exploration & Insights
-*   **Asset Correlation:**
-    *   **Nifty vs. Gold:** Low correlation, indicating potential diversification benefits.
-    *   **USDINR:** Acts as a regime filter, often spiking during stress periods (negative correlation with Nifty).
-*   **Stationarity:** Checks confirm that raw prices are non-stationary, but percentage returns (`Ret_1d`, `Ret_3d`) are stationary, validating their use as model features.
-*   **Distribution:** Daily returns exhibit "fat tails" (kurtosis > 3), justifying the use of robust models like XGBoost over linear regression.
+## Features & Methodology
+1. **Adaptive Labeling (Triple Barrier Method):** Instead of forcing naive Up/Down binary predictions, METR uses a volatility-adaptive Triple Barrier sequence ($T=3$, $k=1.5\sigma$) to filter out non-directional chop (Label `0`), strictly identifying true positive (`+1`) and negative (`-1`) profitable drift.
+2. **Strict Validation:** TimeSeriesSplit is strictly enforced across a 12-year window (2013-2025) to guarantee zero look-ahead bias and honest holdout evaluation.
+3. **Anti-Overfitting Controls:** Extremely shallow XGBoost architectures bound by active L1/L2 regularization to prevent the memorization of specific historical dates.
 
 ## Getting Started
 
 ### Prerequisites
-*   Python 3.10+
-*   `polars`, `yfinance`, `pyyaml`, `numpy`, `matplotlib`
+* Python 3.10+
+* `polars`, `yfinance`, `xgboost`, `scikit-learn`, `matplotlib`, `pyyaml`
 
-### Usage
-1.  **Download Data:**
-    ```bash
-    python src/fetch_data.py
-    ```
-2.  **Process Data:**
-    Open and run `src/data_cleaning.ipynb` to generate features and save processed datasets.
+### Diving Deeper
+This repository is primarily structured as a chronological  study.You can explore the exact methodology, grid search results, and logic shifts by reading the detailed notes:
+
+1. **[Documentation & Methodology](docs/documentation.md):** The core findings, architectures, and theoretical foundations of the METR experiment.
+2. **[Grid Search Observations](docs/observations.md):** Detailed logs, logic patches, and empirical parameters chosen specifically for each asset.
+3. **[Execution Roadmap](docs/project_plan.md):** The chronological phases tracking the project's progression.
