@@ -62,3 +62,31 @@ Replaced feature-label correlation with a **Balance Score** metric to evaluate c
 **Next Steps:**
 - Add `TB_Label` to the data pipeline (`src/data_cleaning.ipynb`), computed using the identified best parameters per asset.
 - Retrain XGBoost as a 3-class classifier (`multi:softprob`).
+
+---
+
+### 2026-03-20 — Triple Barrier Labeling: Edge Case Tiebreaker Update
+
+**What was done:**
+Updated the tie-breaker logic in `generate_barriers()`. Previously, if both the upper and lower barriers were hit on the exact same day, the algorithm conservatively defaulted to `-1` (assuming the stop-loss hit first). This has been changed to default to `0` (Timeout / Neutral).
+
+**Key Observations from the Logs:**
+1. **Elimination of Artificial '-1' Skew:** The previous logic caused a massive artificial inflation of the `-1` class, especially when using tighter barriers where hitting both limits intraday is common. For example, on USDINR at `k=0.5, T=3`, the `-1` class plummeted from **64.9%** down to **31.5%** after the fix.
+2. **Choppy Assets Benefited Most:** USDINR inherently has high intraday chop relative to its directional trends. When both limits are breached intraday, labeling it a loss (`-1`) penalized the model. Labeling it `0` correctly identifies that this specific timeframe was directionless/choppy volatility rather than a clean directional loss.
+3. **Balanced Distributions:** As a result of this change, the overall label distributions are significantly more natural and balanced across all three assets without mathematically forcing it.
+
+**Final Best Parameters & Evaluation Metric Switch:**
+I formally selected the final parameters by evaluating them against the **Return Spread** (+1 Mean Return minus -1 Mean Return) rather than purely optimizing the mathematical **Balance Score** (Imbalance). 
+
+*Why Spread > Imbalance:*
+Mathematical balancing algorithms blindly force the distribution toward 33.3% per class. As seen previously on Gold, this forced the model onto extreme statistical outliers ($2.5\sigma$ in 5 days) just to satisfy the equation, starving the model of normal trade setups. **Spread** is vastly superior because it measures the actual *financial edge* of the label. When a $+1$ is triggered, I need proof that the asset drifted correctly, and similarly that $-1$ actually captured a loss. Maximizing this spread ensures the label accurately isolates true directional momentum/alpha, rather than just mathematically grouping noise perfectly into thirds.
+
+*Final Parameter Selection (Fixed at $T=3$):*
+
+| Asset | $k$ | $T$ | -1 (%) | 0 (%) | +1 (%) | ret(0) | Pass |
+|---|---|---|--------|-------|--------|--------|------|
+| **Nifty 50** | 1.5 | 3 | 35.2% | 34.3% | 30.5% | +0.39% | ✓ |
+| **Gold** | 1.75 | 3 | 38.7% | 34.1% | 27.3% | -0.28% | ✓ |
+| **USD/INR** | 1.5 | 3 | 33.3% | 32.7% | 34.1% | +0.03% | ✓ |
+
+These practical boundaries successfully pass the balance filter (no class > 45%), provide a very healthy timeout rate (~34% noise removed), and maintain strong directional spreads.
