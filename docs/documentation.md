@@ -215,22 +215,39 @@ All 19 features are derived from **single-asset OHLC data** using standard techn
 
 ---
 
-## 8. Research Directions (Not Yet Implemented)
+## 8. Finalized Labeling Approach: Triple Barrier Method
 
-### 8.1 Triple Barrier Labeling
 **Source:** Marcos López de Prado, *Advances in Financial Machine Learning*
 
-Instead of simple binary labels (up/down), the Triple Barrier Method defines three exit conditions:
-- **Upper Barrier:** Price rises by 2σ → Label = +1 (profit target hit)
-- **Lower Barrier:** Price falls by 2σ → Label = -1 (stop-loss hit)
-- **Vertical Barrier:** Time expires (3 days) → Label = 0 (inconclusive)
+Instead of simple binary labels (up/down), we use a forward-scanning Triple Barrier Method. This defines three exit conditions over a rolling window $T$:
+- **Upper Barrier:** Price rises by $k\sigma$ → Label = +1 (profit target hit first)
+- **Lower Barrier:** Price falls by $k\sigma$ → Label = -1 (stop-loss hit first)
+- **Vertical Barrier:** Time $T$ expires → Label = 0 (inconclusive / timeout)
 
-**Advantages over current approach:**
+Where $\sigma$ is the daily volatility (computed as the rolling 20-day standard deviation of daily returns).
+
+**Advantages over initial binary approach:**
 - Filters out noise (tiny moves become 0 instead of forced 0/1)
-- Volatility-adaptive (barriers scale with market conditions)
-- Reflects actual trading reality (stop-losses and take-profits)
+- Volatility-adaptive (barriers scale dynamically with market conditions)
+- Reflects actual directional conviction.
 
-### 8.2 Cross-Asset Features
+### 8.1 Chosen Parameters ($T=3$)
+After conducting a multi-asset grid analysis (see `docs/observations.md`), we locked in the following parameters:
+
+| Asset | k (Barrier Width) | T (Time Horizon) | Expected Class Balance (-1 / 0 / +1) |
+|---|---|---|---|
+| **Nifty** | $1.5\sigma$ | 3 Days | 35.6% / 33.9% / 30.5% |
+| **Gold** | $1.75\sigma$ | 3 Days | 41.6% / 31.2% / 27.3% |
+| **USDINR** | $1.5\sigma$ | 3 Days | 34.7% / 31.2% / 34.1% |
+
+**Reasoning:**
+Mathematical grid search favored $T=5$ with extreme barriers ($2.5\sigma$). However, expecting a financial asset to move $2.5\sigma$ in just 5 days forces the model to hunt for highly improbable outlier events. We chose $T=3$ with tighter barriers ($1.5\sigma - 1.75\sigma$) because it represents a **realistic, tradeable move** while still preserving a ~30% timeout class to successfully filter out market noise. Gold requires slightly wider barriers ($1.75\sigma$) due to its higher relative intraday volatility.
+
+---
+
+## 9. Research Directions (Not Yet Implemented)
+
+### 9.1 Cross-Asset Features
 Current features are all single-asset (Nifty predicts Nifty from Nifty). Proposed additions:
 
 | Feature | Formula | Signal |
@@ -242,7 +259,7 @@ Current features are all single-asset (Nifty predicts Nifty from Nifty). Propose
 
 **Prerequisite:** Align all three assets to common trading dates before feature engineering.
 
-### 8.3 Asset-Specific Model Tuning
+### 9.2 Asset-Specific Model Tuning
 Each asset behaves differently and requires tailored hyperparameters:
 
 | Asset | Recommended Approach |
@@ -251,19 +268,19 @@ Each asset behaves differently and requires tailored hyperparameters:
 | **Gold (Commodity)** | Lower learning rate (violent bursts), hedge/safety features |
 | **USD/INR (FX)** | Higher regularization (central bank-managed), mean-reversion focus |
 
-### 8.4 Regime Modeling (Paused)
+### 9.3 Regime Modeling (Paused)
 A volatility filter to avoid trading during high-volatility periods. This was deprioritized but remains a potential improvement:
 - Train a separate classifier to predict High/Low volatility regimes
 - Only take Exposure Model trades during "Calm" regimes
 
-### 8.5 Alternative Data Sources
+### 9.4 Alternative Data Sources
 Features not derivable from OHLC that institutions use:
 - India VIX, Put-Call Ratio, FII/DII flows (Tier 2 — requires new data sources)
 - News sentiment via NLP, Google Trends (Tier 3 — advanced)
 
 ---
 
-## 9. File Reference
+## 10. File Reference
 
 | File | Purpose |
 |------|---------|
@@ -280,7 +297,7 @@ Features not derivable from OHLC that institutions use:
 
 ---
 
-## 10. Conclusion
+## 11. Conclusion
 
 The METR project successfully built a controlled experimental framework for comparing ML-based entry timing against random chance. The core finding is that **standard technical indicators provide a weak but measurable edge** (~0.53 CV ROC-AUC) for 3-day Nifty direction prediction, but this edge is **not statistically significant** when tested against random baselines (p=0.38).
 
@@ -292,30 +309,4 @@ Both are documented above and ready for implementation.
 
 ---
 
-## 11. Lab Log
 
-### 2026-03-18 — Triple Barrier Labeling: Grid Analysis (Nifty)
-
-**What was done:**
-Implemented `src/tripple_barrier.py` with a forward-scan labeler. Ran a grid search over `k ∈ [0.5, 0.75, 1.0, 1.5]` × `T ∈ [3, 5, 10]` on Nifty training data (~2447 rows).
-
-**Key Results:**
-
-| k | T | -1 (%) | 0 (%) | +1 (%) | Notes |
-|---|---|--------|-------|--------|-------|
-| 0.5 | 3 | 63.6 | 0.2 | 36.2 | Barriers too tight — nearly all hit same day |
-| 0.75 | 3 | 55.1 | 3.5 | 41.4 | Still tight, heavy -1 skew |
-| 1.0 | 3 | 47.9 | 10.4 | 41.6 | Moderate — meaningful timeout class appears |
-| 1.5 | 3 | 35.6 | 33.9 | 30.5 | Most balanced 3-class distribution |
-| 1.0 | 5 | 51.4 | 2.7 | 45.9 | Longer T reduces timeouts |
-| 1.5 | 5 | 43.2 | 14.9 | 41.9 | Good balance with more time |
-
-**Observations:**
-1. **Persistent -1 bias across all configurations.** Two causes identified:
-   - **Same-day tiebreak:** When both barriers are hit in one day (common at low k), the code defaults to `-1`. At `k=0.5`, this dominates the label.
-   - **Market microstructure:** Intraday lows tend to be further from Open than Highs (negative skew), so the lower barrier gets hit first naturally.
-2. **k=0.5 and k=0.75 are too tight** — barriers fall inside a single day's range, so the label mostly measures intraday skew, not directional signal.
-3. **Increasing T beyond 5 adds almost nothing** — most barriers are hit within the first few days regardless.
-4. **Best candidates:** `k=1.0, T=3` (if you want some timeout filtering) or `k=1.5, T=3` (if you want balanced classes).
-
-**Next:** Pick final (k, T), add `TB_Label` to the data pipeline, retrain XGBoost as a 3-class classifier.
