@@ -83,10 +83,10 @@ Mathematical balancing algorithms blindly force the distribution toward 33.3% pe
 
 *Final Parameter Selection (Fixed at $T=3$):*
 
-| Asset | $k$ | $T$ | -1 (%) | 0 (%) | +1 (%) | ret(0) | Pass |
-|---|---|---|--------|-------|--------|--------|------|
-| **Nifty 50** | 1.5 | 3 | 35.2% | 34.3% | 30.5% | +0.39% | ✓ |
-| **Gold** | 1.75 | 3 | 38.7% | 34.1% | 27.3% | -0.28% | ✓ |
-| **USD/INR** | 1.5 | 3 | 33.3% | 32.7% | 34.1% | +0.03% | ✓ |
+| Asset | $k$ | $T$ | -1 (%) | 0 (%) | +1 (%) | Return Spread |
+|---|---|---|--------|-------|--------|--------|
+| **Nifty 50** | 1.5 | 3 | 35.2% | 34.3% | 30.5% | 2.72% |
+| **Gold** | 1.75 | 3 | 38.7% | 34.1% | 27.3% | 2.71% |
+| **USD/INR** | 1.5 | 3 | 33.3% | 32.7% | 34.1% | 0.82% |
 
 These practical boundaries successfully pass the balance filter (no class > 45%), provide a very healthy timeout rate (~34% noise removed), and maintain strong directional spreads.
