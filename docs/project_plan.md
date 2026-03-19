@@ -1,77 +1,51 @@
-# METR — Market Exposure Timing vs Randomness
-> **A Controlled Multi-Asset Empirical Study**
+# METR — Multi-Phase Execution Plan
 
-## 1. Executive Summary
-The **METR** project investigates whether structured machine learning models can outperform pure randomness in short-term exposure decisions. By using a fixed 3-day holding period and comparing model decisions against a 50/50 "Long vs. Flat" random baseline, the study isolates the statistical "edge" provided by market-derived features.
+## Aim & Ideology
 
-## 2. Research Objective
-The goal is to determine if historical price dynamics (momentum, mean reversion, and volatility regimes) contain predictive power that exceeds a random coin-flip over an intermediate horizon.
+The fundamental research question driving METR is: 
+**Can a machine learning model trained purely on historical price/volume data—without any live sentiment, no news, no macro indicators, and no order flow—actually beat random market entries in the long term?**
 
-**Key Experimental Constants:**
-* **Holding Period:** Fixed at 3 Days (to balance signal decay vs. market noise).
-* **Baseline:** Monte Carlo simulations using a 50/50 random generator (Long or Flat).
-* **Architecture:** Localized modeling (specific models for each asset class).
+This project operates under strict data constraints: the models are completely blind to real-world context. They must attempt to extract a statistically significant predictive edge entirely from mathematical market microstructure (momentum, volatility regimes, and mean reversion patterns).
 
+## Core Experiments
+To empirically test this ideology, the project is structured around two core experiments running simultaneously across three uncorrelated asset classes (Equities, Commodities, FX):
 
-
----
-
-## 3. Asset Universe & Model Structure
-The study employs a **Triple-Asset, Local-Model** architecture. Each asset has its own dedicated Exposure and Regime models to account for unique volatility profiles.
-
-| Asset | Model Pair | Logic |
-| :--- | :--- | :--- |
-| **Equity (e.g., SPY/NIFTY)** | Exposure + Regime | Growth/Risk-On dynamics. |
-| **Gold (e.g., GLD/GoldBeES)** | Exposure + Regime | Safe-haven/Inflation dynamics. |
-| **Currency (e.g., USD/INR)** | Exposure + Regime | Macro stress/Yield dynamics. |
-
-**Portfolio Integration:**
-The final portfolio return is a weighted average of the decisions made by the three individual asset models.
+1. **Model vs. Random (The Edge Test):** Comparing the models' predictive trades over a fixed 3-day holding period against a massive Monte Carlo simulation of 1,000 purely random (coin-flip) trading strategies. This isolates true statistical skill from lucky streaks or general market drift.
+2. **Unified vs. Isolated Modeling (The Context Test):** Comparing models trained exclusively on single-asset features (e.g., Nifty predicting Nifty) against Unified cross-asset models (e.g., Gold volatility mapped against Nifty momentum) to determine if macro-context can be inferred purely from relative price action.
 
 ---
+### Phase 1: Foundation & Initial Modeling ✅ *(Completed)*
+- [x] Fetch OHLC data for Equity, Commodity, and FX markets.
+- [x] Engineer foundational technical features (Momentum, Trend, Volatility).
+- [x] Train baseline binary predictive models (Model v1).
+- [x] Implement aggressive regularization to counter overfitting (Model v2).
+- [x] Build and run the 1000-iteration Monte Carlo random baseline.
 
-## 4. Technical Specification
-### 4.1 Feature Engineering
-All features are calculated at **Market Close ($T$)** and are stationary (scale-free).
-* **Exposure Features:** `Ret_3d`, `Ret_5d`, `Ret_20d`, `Vol_Ratio`, `MA_Ratio`, `Close_Pos_Range`, `Intraday_Return`.
-* **Regime Features:** `Vol_10d`, `Vol_20d`, `Abs_Return`, `Rolling_Range`.
+### Phase 2: Label Optimization (Triple Barrier) ✅ *(Completed)*
+- [x] Implement forward-scanning dynamic Triple Barrier logic.
+- [x] Run comprehensive grid-search validation across Nifty, Gold, and USDINR.
+- [x] Calibrate intraday tie-breaker edge cases to prevent false stop-outs.
+- [x] Shift evaluation metric from pure balance to tradeable Return Spread.
+- [x] Finalize optimal $k$ scaling for $T=3$ holding periods across all assets.
 
-### 4.2 Causal Labeling & Timing
-To ensure no data leakage, the timing is strictly controlled:
-1. **Decision Time:** $T$ Close (using features known at that moment).
-2. **Entry:** $T+1$ Open (captures move *after* the overnight gap).
-3. **Exit:** $T+4$ Close (total 3-day holding period).
+### Phase 3: Data Pipeline & Advanced Feature Engineering ⏳ *(Up Next)*
+*As we discovered, improved labels alone without improved features will not yield significantly better predictive power. We must inject cross-market intelligence before retraining.*
+- [ ] Refactor `src/data_cleaning.ipynb` to apply Triple Barrier logic programmatically.
+- [ ] Align time-series data perfectly across all 3 assets to prevent date mismatches.
+- [ ] Engineer relative-strength cross-asset features (e.g., Equity vs. Gold momentum, Cross-Vol Ratios).
+- [ ] Map labels to a 3-class target system (e.g., 0=Timeout, 1=Long, 2=Short) and export updated datasets.
 
-**The Labeling Logic:**
-$$\text{Label} = \begin{cases} 1 & \text{if } \frac{Close_{T+4} - Open_{T+1}}{Open_{T+1}} > 0 \\ 0 & \text{otherwise} \end{cases}$$
+### Phase 4: Model Retraining (Multi-Class) 
+- [ ] Update `config.yaml` to handle multi-class XGBoost parameters and new features.
+- [ ] Train the new 3-class models on the Triple Barrier labels.
+- [ ] Evaluate model output probabilities against the new $T=3$ Return Spread.
+- [ ] Compare isolated models (Nifty-only features predicting Nifty) vs Unified models (all features predicting Nifty).
 
----
+### Phase 5: Regime & Unified Modeling
+- [ ] Implement Regime Modeling (Calm vs Volatile) to dynamically size model convictions.
+- [ ] Test regime-aware weighting across the entire unified portfolio.
 
-## 5. Experimental Framework
-### Experiment 1: Model vs. Random (Monte Carlo)
-We compare the trained XGBoost models against a **500-iteration Monte Carlo simulation**.
-* **Model Path:** Uses XGBoost probability to decide Long or Flat.
-* **Random Path:** Uses a `random` library (or manual coin-flip) for a 50/50 Long/Flat decision.
-* **Metric:** Terminal wealth distribution. The model is "successful" if it outperforms 95% of the random runs.
-
-### Experiment 2: Regime-Aware Weighting
-We test if applying the **Regime Model** (Calm vs. Volatile) to adjust position sizes outperforms a static-weight portfolio.
-
----
-
-## 6. Model Parameters (XGBoost)
-To prevent overfitting to financial noise, the models are kept intentionally "shallow":
-* **Max Depth:** 3
-* **Learning Rate:** 0.05
-* **Estimators:** 400
-* **Validation:** `TimeSeriesSplit` (No random shuffling of time-series data).
-
----
-
-## 7. Limitations & Scope
-* **Execution:** Transaction costs and slippage are excluded to isolate the "mathematical edge."
-* **Gap Risk:** The model does not predict the $T$ to $T+1$ gap, only the subsequent 3-day trend.
-* **Scope:** This is a structural test of signal validity, not a production-ready trading system.
-
-## 8. Conclusion
-METR provides a disciplined environment to separate luck from skill. By fixing the holding period and using non-correlated assets, the study ensures that any recorded "outperformance" is a result of the model capturing persistent market microstructure rather than a single lucky trend.
+### Phase 6: Final Evaluation & Documentation
+- [ ] Re-run Monte Carlo random baseline against the updated 3-class model.
+- [ ] Synthesize empirical findings on predictive ceilings across different asset classes.
+- [ ] Finalize `documentation.md`.
