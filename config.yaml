@@ -18,6 +18,10 @@ Exposure_Features:
 - Ret_1d_Lag1
 - Ret_1d_Lag2
 - Ret_1d_Lag3
+Fractional_Differentiation:
+  gold: 0.3
+  nifty: 0.4
+  usdinr: 0.3
 N_Splits: 5
 Portfolio_Weights:
   gold: 0.32
@@ -34,6 +38,6 @@ Regime_Features:
 Threshold: 0.6
 Triple_Barrier:
   T: 3
-  k_nifty: 1.5
   k_gold: 1.75
+  k_nifty: 1.5
   k_usdinr: 1.5
