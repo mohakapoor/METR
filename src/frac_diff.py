@@ -2,6 +2,7 @@ import numpy as np
 import polars as pl
 import numpy as np
 import matplotlib.pyplot as plt
+import yaml
 from statsmodels.tsa.stattools import adfuller
 
 def get_weights(d, size):
@@ -33,10 +34,11 @@ def best_d_value(d_values,pvals):
 def evaluate_d(assets):
     import os
     os.makedirs("reports/frac_diff", exist_ok=True)
+    dvals = {}
     for name, df in assets:
         series = np.array(df['Close'])
         d_values = np.arange(0.1,1.0,0.1)
-        dvals = {}
+        
         pvals = []
         with open(f"reports/frac_diff/{name}_d_values.txt", "w", encoding="utf-8") as f:
             f.write(name.upper() + ":\n")
@@ -64,6 +66,16 @@ def evaluate_d(assets):
         plt.ylabel("p-value  (log)")
         plt.yscale('log')
         plt.savefig(f"reports/frac_diff/{name}_d_value_vs_p_value.png")
+    
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+    
+    config['Fractional_Differentiation'] = {k: round(float(v), 2) if v is not None else None for k, v in dvals.items()}
+    
+    with open("config.yaml", "w") as f:
+        yaml.safe_dump(config, f, default_flow_style=False)
+    
+    print("\nUpdated config.yaml with best d-values.")
     
 
 
