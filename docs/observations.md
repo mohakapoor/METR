@@ -90,3 +90,27 @@ Mathematical balancing algorithms blindly force the distribution toward 33.3% pe
 | **USD/INR** | 1.5 | 3 | 33.3% | 32.7% | 34.1% | 0.82% |
 
 These practical boundaries successfully pass the balance filter (no class > 45%), provide a very healthy timeout rate (~34% noise removed), and maintain strong directional spreads.
+
+---
+
+### 2026-03-27 — Fractional Differentiation: Stationarity vs. Memory
+
+**What was done:**
+Implemented `src/frac_diff.py` to find the optimal differentiation order $d$ that achieves stationarity (ADF p-value < 0.05) while preserving maximum memory. Tested $d \in [0.1, 0.9]$.
+
+**Key Results:**
+
+| Asset | Optimal d | ADF p-value | Plot Reference |
+|---|---|---|---|
+| **Nifty 50** | 0.40 | 0.0072 | `nifty_d_value_vs_p_value.png` |
+| **Gold** | 0.30 | 0.0214 | `gold_d_value_vs_p_value.png` |
+| **USD/INR** | 0.30 | 8.14e-07 | `usdinr_d_value_vs_p_value.png` |
+
+**Observations:**
+1. **USD/INR is hyper-stationary:** Even at $d=0.3$, the p-value is extremely low ($10^{-7}$). This suggests the raw series has very little long-term memory or is heavily mean-reverting.
+2. **Nifty requires more differencing:** Nifty did not pass the stationarity test until $d=0.4$, confirming it has stronger trend persistence than Gold or USD/INR.
+3. **Optimal Mapping:** These $d$ values are saved to `config.yaml` to prevent over-differencing (memory loss) in the next phase.
+
+**Next Steps:**
+- Integrate these $d$ values into the feature pipeline in `src/data_cleaning.ipynb`.
+- Align cross-asset timestamps for unified modeling.
