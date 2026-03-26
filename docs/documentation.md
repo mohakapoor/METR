@@ -44,7 +44,8 @@ All features are **stationary** (no raw prices) and computed at market close:
 | **Overbought/Oversold** | `RSI`, `BB_Pct` | 2 |
 | **Microstructure** | `Close_Pos_Range`, `Intraday_Return` | 2 |
 | **Lagged Returns** | `Ret_1d_Lag1`, `Ret_1d_Lag2`, `Ret_1d_Lag3` | 3 |
-| **Total** | | **19** |
+| **Memory Preservation** | `Frac_Diff` (Fractional Differentiation) | 1 |
+| **Total** | | **20** |
 
 ### Label Definition
 ```
@@ -250,11 +251,31 @@ The final labeling scheme demonstrates that predictive signal strength varies si
 
 ---
 
-## 9. Research Directions (Not Yet Implemented)
+## 9. Advanced Feature Engineering: Fractional Differentiation
 
-### 9.1 Cross-Asset Features
-Current features are all single-asset (Nifty predicts Nifty from Nifty). Proposed additions:
+To solve the stationarity-memory trade-off, we implemented **Fractional Differentiation** ($d \in [0.1, 0.9]$). This ensures the features are stationary for ML models while retaining as much historical "memory" as possible, unlike standard integer-differencing ($d=1$).
 
+### 9.1 Methodology
+We used `src/frac_diff.py` to find the minimum order $d$ that passes the Augmented Dickey-Fuller (ADF) test ($p < 0.05$) for each asset's Close prices.
+
+### 9.2 Optimal Order ($d$) per Asset
+| Asset | Optimal $d$ | Characteristic |
+|---|---|---|
+| **Nifty 50** | **0.40** | High trend persistence / Strong memory |
+| **Gold** | **0.30** | Moderate memory |
+| **USD/INR** | **0.30** | Hyper-stationary / Low memory |
+
+These values are automatically persisted in `config.yaml` and used to transform the feature set before training.
+
+---
+
+## 10. Research Directions
+
+### 10.1 In Progress (Phase 3)
+- **Advanced Features:** Fractional Differentiation (Implemented via `src/frac_diff.py`).
+- **Asset Alignment:** Programmatic alignment of Nifty, Gold, and USD/INR timestamps (Current focus).
+
+### 10.2 Cross-Asset Features (Proposed)
 | Feature | Formula | Signal |
 |---------|---------|--------|
 | Equity-Gold Relative Strength | `Ret_5d_Nifty - Ret_5d_Gold` | Risk appetite |
@@ -264,7 +285,7 @@ Current features are all single-asset (Nifty predicts Nifty from Nifty). Propose
 
 **Prerequisite:** Align all three assets to common trading dates before feature engineering.
 
-### 9.2 Asset-Specific Model Tuning
+### 10.3 Asset-Specific Model Tuning
 Each asset behaves differently and requires tailored hyperparameters:
 
 | Asset | Recommended Approach |
@@ -273,32 +294,29 @@ Each asset behaves differently and requires tailored hyperparameters:
 | **Gold (Commodity)** | Lower learning rate (violent bursts), hedge/safety features |
 | **USD/INR (FX)** | Higher regularization (central bank-managed), mean-reversion focus |
 
-### 9.3 Regime Modeling (Paused)
-A volatility filter to avoid trading during high-volatility periods. This was deprioritized but remains a potential improvement:
-- Train a separate classifier to predict High/Low volatility regimes
-- Only take Exposure Model trades during "Calm" regimes
+### 10.4 Regime Modeling
+A volatility filter to avoid trading during high-volatility periods. This remains a potential improvement:
+- Train a separate classifier to predict High/Low volatility regimes.
+- Only take Exposure Model trades during "Calm" regimes.
 
-### 9.4 Alternative Data Sources
+### 10.5 Alternative Data Sources
 Features not derivable from OHLC that institutions use:
-- India VIX, Put-Call Ratio, FII/DII flows (Tier 2 — requires new data sources)
-- News sentiment via NLP, Google Trends (Tier 3 — advanced)
+- India VIX, Put-Call Ratio, FII/DII flows (Tier 2).
+- News sentiment via NLP, Google Trends (Tier 3).
 
 ---
 
-## 10. File Reference
+## 11. File Reference
 
 | File | Purpose |
 |------|---------|
 | `src/fetch_data.py` | Downloads raw OHLCV data |
-| `src/data_cleaning.ipynb` | Feature engineering, labeling, train/test split |
-| `src/train_exposure.py` | XGBoost training with GridSearchCV + early stopping |
-| `src/evaluate_model.py` | Generates 5 diagnostic plots (confusion matrix, ROC, probability dist, etc.) |
-| `src/benchmark_random.py` | Monte Carlo comparison (model vs 1000 random strategies) |
-| `src/feature_analysis.py` | Feature importance and correlation analysis |
-| `config.yaml` | Central config (features, splits, threshold, weights) |
-| `models/nifty.joblib` | Saved Model v1 (overfitted) |
-| `models/nifty2.joblib` | Saved Model v2 (regularized) |
-| `reports/` | All generated plots (confusion matrix, ROC curve, threshold sweep, etc.) |
+| `src/frac_diff.py` | Calculates and saves optimal fractional differentiation $d$ |
+| `src/data_cleaning.ipynb` | Feature engineering, labeling, alignment |
+| `src/train_exposure.py` | XGBoost training with GridSearchCV |
+| `config.yaml` | Central configuration (now includes `Fractional_Differentiation`) |
+| `reports/frac_diff/` | ADF p-value plots and results |
+| `docs/observations.md` | Detailed lab logs and grid-search analysis |
 
 ---
 
