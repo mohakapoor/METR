@@ -22,6 +22,7 @@ Determine if historical price dynamics (momentum, mean reversion, volatility reg
 | Data Processing | Polars (lazy execution) |
 | Modeling | XGBoost + Scikit-Learn |
 | Configuration | `config.yaml` (feature lists, splits, thresholds) |
+| Data Source | `yfinance` |
 | Evaluation | Custom scripts (`evaluate_model.py`, `benchmark_random.py`, `feature_analysis.py`) |
 
 ---
@@ -30,7 +31,7 @@ Determine if historical price dynamics (momentum, mean reversion, volatility reg
 
 ### Source
 - Raw OHLCV data fetched via `src/fetch_data.py`
-- Three assets: Nifty (3213 rows), Gold (3224 rows), USD/INR (3403 rows)
+- Assets: Nifty, Gold, USD/INR, and **India VIX** (implied volatility / fear gauge)
 - Row count differences due to different market holidays
 
 ### Feature Engineering (`src/data_cleaning.ipynb`)
@@ -45,7 +46,8 @@ All features are **stationary** (no raw prices) and computed at market close:
 | **Microstructure** | `Close_Pos_Range`, `Intraday_Return` | 2 |
 | **Lagged Returns** | `Ret_1d_Lag1`, `Ret_1d_Lag2`, `Ret_1d_Lag3` | 3 |
 | **Memory Preservation** | `Frac_Diff` (Fractional Differentiation) | 1 |
-| **Total** | | **20** |
+| **Forward Sentiment** | `India_VIX` (Implied Volatility) | 1 |
+| **Total** | | **21** |
 
 ### Label Definition
 ```
@@ -272,8 +274,9 @@ These values are automatically persisted in `config.yaml` and used to transform 
 ## 10. Research Directions
 
 ### 10.1 In Progress (Phase 3)
-- **Advanced Features:** Fractional Differentiation (Implemented via `src/frac_diff.py`).
-- **Asset Alignment:** Programmatic alignment of Nifty, Gold, and USD/INR timestamps (Current focus).
+- **Advanced Features:** Fractional Differentiation (Implemented).
+- **Forward-Looking Vol:** India VIX Integration (Implemented/Fetched).
+- **Asset Alignment:** Programmatic alignment of Nifty, Gold, USD/INR, and VIX timestamps (Current focus).
 
 ### 10.2 Cross-Asset Features (Proposed)
 | Feature | Formula | Signal |
@@ -298,11 +301,6 @@ Each asset behaves differently and requires tailored hyperparameters:
 A volatility filter to avoid trading during high-volatility periods. This remains a potential improvement:
 - Train a separate classifier to predict High/Low volatility regimes.
 - Only take Exposure Model trades during "Calm" regimes.
-
-### 10.5 Alternative Data Sources
-Features not derivable from OHLC that institutions use:
-- India VIX, Put-Call Ratio, FII/DII flows (Tier 2).
-- News sentiment via NLP, Google Trends (Tier 3).
 
 ---
 
