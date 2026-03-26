@@ -4,5 +4,3 @@
 # Ignore parquet files
 *.parquet
 
-
-test.ipynb
