@@ -5,7 +5,7 @@
 
 **METR** is a controlled empirical study designed to isolate true statistical predictive edge from market noise and lucky streaks. By restricting the models to exclusively mathematical market microstructure (momentum, volatility regimes, mean reversion) and forcing a fixed 3-day holding period, the project evaluates whether standard assets (Equities, Commodities, FX) possess predictable short-term inefficiencies.
 
-> **Current Status:** Phase 3 — **Cross-Asset Feature Engineering & Data Pipeline**. Baseline binary models and Triple Barrier Labeling optimization are complete. We are now integrating cross-market relative strength features before retraining a Unified Multi-Class machine learning model.
+> **Current Status:** Phase 3 — **Cross-Asset Feature Engineering & Data Pipeline**. Baseline binary models and Triple Barrier Labeling optimization are complete. We are now integrating **India VIX (Implied Volatility)** and cross-market relative strength features before retraining a Unified Multi-Class machine learning model.
 
 ## Core Experiments
 1. **Model vs. Random (The Edge Test):** Evaluating the model's predictive capabilities against a massive 1,000-iteration Monte Carlo simulation of purely random (coin-flip) trading strategies to ensure genuine statistical outperformance.
@@ -37,6 +37,7 @@ METR/
 1. **Adaptive Labeling (Triple Barrier Method):** Instead of forcing naive Up/Down binary predictions, METR uses a volatility-adaptive Triple Barrier sequence ($T=3$, $k=1.5\sigma$) to filter out non-directional chop (Label `0`), strictly identifying true positive (`+1`) and negative (`-1`) profitable drift.
 2. **Strict Validation:** TimeSeriesSplit is strictly enforced across a 12-year window (2013-2025) to guarantee zero look-ahead bias and honest holdout evaluation.
 3. **Anti-Overfitting Controls:** Extremely shallow XGBoost architectures bound by active L1/L2 regularization to prevent the memorization of specific historical dates.
+4. **Implied Volatility (India VIX):** Unlike traditional technical indicators that rely on backward-looking realized volatility, METR incorporates forward-looking implied volatility (India VIX) to capture market expectations and fear-gauges as a primary predictive feature.
 
 ## Getting Started
 

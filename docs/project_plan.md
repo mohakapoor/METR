@@ -5,7 +5,7 @@
 The fundamental research question driving METR is: 
 **Can a machine learning model trained purely on historical price/volume data—without any live sentiment, no news, no macro indicators, and no order flow—actually beat random market entries in the long term?**
 
-This project operates under strict data constraints: the models are completely blind to real-world context. They must attempt to extract a statistically significant predictive edge entirely from mathematical market microstructure (momentum, volatility regimes, and mean reversion patterns).
+This project operates under strict data constraints: the models are completely blind to real-world context. They must attempt to extract a statistically significant predictive edge entirely from mathematical market microstructure (momentum, volatility regimes—both realized and implied—and mean reversion patterns).
 
 ## Core Experiments
 To empirically test this ideology, the project is structured around two core experiments running simultaneously across three uncorrelated asset classes (Equities, Commodities, FX):
@@ -33,6 +33,7 @@ To empirically test this ideology, the project is structured around two core exp
 - [ ] Refactor `src/data_cleaning.ipynb` to apply Triple Barrier logic programmatically.
 - [ ] Align time-series data perfectly across all 3 assets to prevent date mismatches.
 - [ ] Engineer relative-strength cross-asset features (e.g., Equity vs. Gold momentum, Cross-Vol Ratios).
+- [ ] **Integrate India VIX (`^INDIAVIX`):** Introduce forward-looking implied volatility to replace/supplement backward-looking realized volatility (`Vol_20d`).
 - [ ] Map labels to a 3-class target system (e.g., 0=Timeout, 1=Long, 2=Short) and export updated datasets.
 
 ### Phase 4: Model Retraining (Multi-Class) 
