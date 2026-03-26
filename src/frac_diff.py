@@ -31,11 +31,14 @@ def best_d_value(d_values,pvals):
                 return i
 
 def evaluate_d(assets):
+    import os
+    os.makedirs("reports/frac_diff", exist_ok=True)
     for name, df in assets:
         series = np.array(df['Close'])
         d_values = np.arange(0.1,1.0,0.1)
+        dvals = {}
         pvals = []
-        with open(f"reports/tripple_barrier/{name}_grid_results.txt", "w", encoding="utf-8") as f:
+        with open(f"reports/frac_diff/{name}_d_values.txt", "w", encoding="utf-8") as f:
             f.write(name.upper() + ":\n")
             for d in d_values:
                 fd_series = frac_diff(series, d)
@@ -51,9 +54,8 @@ def evaluate_d(assets):
                 print(f"d={d:.2f}, p-value={pval}, asset = {name}")
                 pvals.append(pval)
             best_d = best_d_value(d_values,pvals)
-
-        
-
+            dvals[name] = best_d
+            f.write(f"best d_value = {best_d}")
         plt.figure()
         plt.plot(d_values, pvals, marker='o')
         plt.axhline(0.05)  # threshold line
@@ -61,7 +63,7 @@ def evaluate_d(assets):
         plt.xlabel("d")
         plt.ylabel("p-value  (log)")
         plt.yscale('log')
-        plt.show()
+        plt.savefig(f"reports/frac_diff/{name}_d_value_vs_p_value.png")
     
 
 
