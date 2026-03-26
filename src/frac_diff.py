@@ -1,6 +1,7 @@
 import numpy as np
 import polars as pl
 import numpy as np
+import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller
 
 def get_weights(d, size):
@@ -11,8 +12,7 @@ def get_weights(d, size):
 
 def frac_diff(series, d, thresh=1e-5):
     weights = get_weights(d, len(series))
-    
-    # truncate small weights
+
     weights = weights[np.abs(weights) > thresh]
     
     out = np.zeros(len(series))
@@ -26,15 +26,28 @@ def frac_diff(series, d, thresh=1e-5):
 def evaluate_d(assets):
     for name, df in assets:
         series = np.array(df['Close'])
-    
-        for d in np.arange(0.1, 1.0, 0.1):
+        d_values = np.arange(0.1,1.0,0.1)
+        pvals = []
+        for d in d_values:
             fd_series = frac_diff(series, d)
             fd_series = fd_series[~np.isnan(fd_series)]
             if len(fd_series) < 20:
+                pvals.append(np.nan)
                 continue
-            pval = adfuller(fd_series)[1]
+            try:
+                pval = adfuller(fd_series)[1]
+            except:
+                pval = np.nan
             print(f"d={d:.2f}, p-value={pval}, asset = {name}")
+            pvals.append(pval)
 
+        plt.figure()
+        plt.plot(d_values, pvals, marker='o')
+        plt.axhline(0.05)  # threshold line
+        plt.title(f"ADF p-value vs d ({name})")
+        plt.xlabel("d")
+        plt.ylabel("p-value")
+        plt.show()
 
 
 
