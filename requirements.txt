@@ -9,3 +9,4 @@ seaborn
 notebook
 yfinance
 pyyaml
+statsmodels
