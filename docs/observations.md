@@ -96,7 +96,7 @@ These practical boundaries successfully pass the balance filter (no class > 45%)
 ### 2026-03-27 — Fractional Differentiation: Stationarity vs. Memory
 
 **What was done:**
-Implemented `src/frac_diff.py` to find the optimal differentiation order $d$ that achieves stationarity (ADF p-value < 0.05) while preserving maximum memory. Tested $d \in [0.1, 0.9]$.
+Implemented `src/frac_diff.py` to find the optimal differentiation order $d$ that achieves stationarity (ADF p-value < 0.05) while preserving maximum memory. Tested $d \in [0.1, 0.9]$ at threshold 1e-5.
 
 **Key Results:**
 
@@ -114,3 +114,32 @@ Implemented `src/frac_diff.py` to find the optimal differentiation order $d$ tha
 **Next Steps:**
 - Integrate these $d$ values into the feature pipeline in `src/data_cleaning.ipynb`.
 - Align cross-asset timestamps for unified modeling.
+
+---
+
+### 2026-03-29 — Fractional Differentiation: Threshold Tuning & Data Expansion
+
+**What was done:**
+Refined the fractional differentiation pipeline by testing different `thresh` values ($10^{-3}, 10^{-4}, 10^{-5}$) to balance the trade-off between mathematical precision and practical data availability (Lookback Length $L$).
+
+**Lookback Analysis (Threshold $10^{-5}$):**
+At the previous threshold of $10^{-5}$, small $d$ values required excessive historical data:
+- $d=0.30 \rightarrow L=2275$ days (~9 years of lookback)
+- $d=0.10 \rightarrow L=4076$ days (~16 years of lookback)
+
+Using $10^{-5}$ would cause too many `NaN` values, effectively starving the model of recent training data.
+
+**Key Findings & Adjustments:**
+1. **Threshold Compromise ($10^{-4}$):** Found $10^{-4}$ to be the optimal compromise. It significantly reduces the lookback period compared to $10^{-5}$ while maintaining much higher feature stability than the aggressive $10^{-3}$ threshold (which forced $d$ values too high).
+2. **Data Expansion (2012-2013):** Updated `src/fetch_data.py` to include two extra years of data (2012 and 2013). This provides a necessary buffer for rolling features and fractional differentiation.
+3. **New Training Anchor:** Formally set the training start date to **2014-01-01**. This ensures that by the first training row, all features (including those with long memory) are fully populated with real data.
+
+**Updated $d$-Values (at Threshold $10^{-4}$):**
+| Asset | Optimal d | ADF p-value |
+|---|---|---|
+| **Nifty 50** | 0.50 | 0.041 |
+| **Gold** | 0.60 | 0.027 |
+| **USD/INR** | 0.30 | 8.14e-07 |
+
+**Conclusion:**
+Moving to $10^{-4}$ and anchoring at 2014 allows us to preserve the "memory" of the series without sacrificing the volume of our training set. These updated parameters have been saved to `config.yaml`.
