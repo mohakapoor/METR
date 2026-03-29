@@ -34,20 +34,24 @@ Determine if historical price dynamics (momentum, mean reversion, volatility reg
 - Assets: Nifty, Gold, USD/INR, and **India VIX** (implied volatility / fear gauge)
 - Row count differences due to different market holidays
 
-### Feature Engineering (`src/data_cleaning.ipynb`)
-All features are **stationary** (no raw prices) and computed at market close:
+### Data Pipeline Stages
+The pipeline is split into two distinct specialized notebooks:
 
-| Category | Features | Count |
-|----------|----------|-------|
-| **Momentum** | `Ret_1d`, `Ret_3d`, `Ret_5d`, `Ret_20d`, `ROC_10` | 5 |
-| **Volatility** | `Vol_5d`, `Vol_20d`, `Vol_Ratio`, `ATR_Pct` | 4 |
-| **Trend** | `MA_Ratio`, `Price_vs_MA20`, `MACD_Hist` | 3 |
-| **Overbought/Oversold** | `RSI`, `BB_Pct` | 2 |
-| **Microstructure** | `Close_Pos_Range`, `Intraday_Return` | 2 |
-| **Lagged Returns** | `Ret_1d_Lag1`, `Ret_1d_Lag2`, `Ret_1d_Lag3` | 3 |
-| **Memory Preservation** | `Frac_Diff` (Fractional Differentiation) | 1 |
-| **Forward Sentiment** | `India_VIX` (Implied Volatility) | 1 |
-| **Total** | | **21** |
+1. **Alignment (`src/data_cleaning.ipynb`)**:
+    - **Asset Joining**: Programmatic merging of Nifty, Gold, USD/INR, and VIX into a unified timeframe.
+    - **Holiday Synchronization**: Stabilizing the dataset against non-overlapping market holidays (e.g., MCX vs. NSE).
+    - **Lookback Buffer**: Anchoring the training dataset at 2014-01-01 while preserving 2012-2013 for feature warm-up.
+
+2. **Synthesis (`src/feature_engineering.ipynb`)**:
+    - **Memory Persistence**: Application of **Fractional Differentiation** (orders $d \in [0.30, 0.45]$) to preserve 77-91% of historical memory while ensuring stationarity.
+    - **Macro Indicators**: Integration of the **India VIX** (implied volatility) as a forward-looking fear gauge.
+    - **Labeling**: Generating the **Triple Barrier** target (-1, 0, +1) using per-asset volatility-adaptive thresholds ($k$) and a 3-day window ($T$).
+    - **Inter-Asset Dynamics**: Creation of cross-asset features, including:
+        - **Equity-Commodity Spreads**: Relative strength between Nifty and Gold.
+        - **FX Sensitivity**: Impact of USD/INR volatility on Nifty momentum.
+        - **Volatility Ratios**: Cross-market volatility regime detection.
+
+**Total Features:** 21 (and growing in Phase 3).
 
 ### Label Definition
 ```
@@ -220,10 +224,11 @@ All 19 features are derived from **single-asset OHLC data** using standard techn
 ---
 
 ## 8. Finalized Labeling Approach: Triple Barrier Method
+*(Calculated in `src/feature_engineering.ipynb`)*
 
 **Source:** Marcos López de Prado, *Advances in Financial Machine Learning*
 
-Instead of simple binary labels (up/down), we use a forward-scanning Triple Barrier Method. This defines three exit conditions over a rolling window $T$:
+Instead of simple binary labels (up/down), a forward-scanning Triple Barrier Method is utilized. This defines three exit conditions over a rolling window $T$:
 - **Upper Barrier:** Price rises by $k\sigma$ → Label = +1 (profit target hit first)
 - **Lower Barrier:** Price falls by $k\sigma$ → Label = -1 (stop-loss hit first)
 - **Vertical Barrier:** Time $T$ expires → Label = 0 (inconclusive / timeout)
@@ -255,11 +260,12 @@ The final labeling scheme demonstrates that predictive signal strength varies si
 ---
 
 ## 9. Advanced Feature Engineering: Fractional Differentiation
+*(Implemented in `src/feature_engineering.ipynb`)*
 
-To solve the stationarity-memory trade-off, we implemented **Fractional Differentiation** ($d \in [0.1, 0.9]$). This ensures the features are stationary for ML models while retaining as much historical "memory" as possible, unlike standard integer-differencing ($d=1$).
+To solve the stationarity-memory trade-off, **Fractional Differentiation** ($d \in [0.1, 0.9]$) was implemented. This ensures the features are stationary for ML models while retaining as much historical "memory" as possible, unlike standard integer-differencing ($d=1$).
 
 ### 9.1 Methodology
-We used `src/frac_diff.py` with a threshold of **$10^{-4}$** to balance mathematical precision with data availability (lookback length). Instead of a strict ADF $p < 0.05$ cutoff, parameters were selected by maximizing **Memory Preservation** (correlation with original series) while achieving "good enough" stationarity.
+The study uses `src/frac_diff.py` with a threshold of **$10^{-4}$** to balance mathematical precision with data availability (lookback length). Instead of a strict ADF $p < 0.05$ cutoff, parameters were selected by maximizing **Memory Preservation** (correlation with original series) while achieving "good enough" stationarity.
 
 ### 9.2 Final Manual Selection ($d$)
 | Asset | Optimal $d$ | Correlation | ADF p-value | Characteristic |
@@ -309,13 +315,14 @@ A volatility filter to avoid trading during high-volatility periods. This remain
 
 | File | Purpose |
 |------|---------|
-| `src/fetch_data.py` | Downloads raw OHLCV data |
+| `src/fetch_data.py` | Downloads raw OHLCV and VIX data |
 | `src/frac_diff.py` | Calculates and saves optimal fractional differentiation $d$ |
-| `src/data_cleaning.ipynb` | Feature engineering, labeling, alignment |
+| `src/data_cleaning.ipynb` | Join, align, and stabilize asset timestamps |
+| `src/feature_engineering.ipynb` | Advanced indicators, labels, and training set synthesis |
 | `src/train_exposure.py` | XGBoost training with GridSearchCV |
-| `config.yaml` | Central configuration (now includes `Fractional_Differentiation`) |
-| `reports/frac_diff/` | ADF p-value plots and results |
-| `docs/observations.md` | Detailed lab logs and grid-search analysis |
+| `config.yaml` | Central configuration and research parameters |
+| `reports/frac_diff/` | ADF p-value and Memory-Correlation plots |
+| `docs/observations.md` | Detailed lab logs and manual trade-off decisions |
 
 ---
 

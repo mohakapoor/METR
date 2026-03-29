@@ -29,7 +29,7 @@ To empirically test this ideology, the project is structured around two core exp
 - [x] Finalize optimal $k$ scaling for $T=3$ holding periods across all assets.
 
 ### Phase 3: Data Pipeline & Advanced Feature Engineering ⏳ *(Up Next)*
-*As we discovered, improved labels alone without improved features will not yield significantly better predictive power. We must inject cross-market intelligence before retraining.*
+*Improved labels alone without improved features will not yield significantly better predictive power. Cross-market intelligence must be injected before retraining.*
 - [ ] Refactor `src/data_cleaning.ipynb` to apply Triple Barrier logic programmatically.
 - [ ] Align time-series data perfectly across all 3 assets to prevent date mismatches.
 - [ ] Engineer relative-strength cross-asset features (e.g., Equity vs. Gold momentum, Cross-Vol Ratios).
