@@ -5,22 +5,23 @@ import matplotlib.pyplot as plt
 import yaml
 from statsmodels.tsa.stattools import adfuller
 
-def get_weights(d, size):
-    w = [1.0]
-    for k in range(1, size):
-        w.append(-w[-1] * (d - k + 1) / k)
+def get_weights(d,thresh):
+    w, k = [1.0], 1
+    while True:
+        w_k = -w[-1] * (d - k + 1) / k
+        if abs(w_k) < thresh:
+            break
+        w.append(w_k)
+        k += 1
     return np.array(w)
 
-def frac_diff(series, d, thresh=1e-5):
-    weights = get_weights(d, len(series))
-
-    weights = weights[np.abs(weights) > thresh]
+def frac_diff(series, d, thresh):
+    weights = get_weights(d,thresh)
     
-    out = np.zeros(len(series))
-    out[:] = np.nan
+    out = np.full(len(series),np.nan)
     
-    for i in range(len(weights), len(series)):
-        out[i] = np.dot(weights[::-1], series[i-len(weights):i])
+    for i in range(len(weights)-1, len(series)):
+        out[i] = np.dot(weights[::-1], series[i-len(weights)+1:i+1])
     
     return out
 
@@ -31,19 +32,19 @@ def best_d_value(d_values,pvals):
             if(j<0.05):
                 return i
 
-def evaluate_d(assets):
+def evaluate_d(assets,thresh):
     import os
     os.makedirs("reports/frac_diff", exist_ok=True)
     dvals = {}
     for name, df in assets:
         series = np.array(df['Close'])
-        d_values = np.arange(0.1,1.0,0.1)
+        d_values = np.arange(0.1,1.0,0.05)
         
         pvals = []
         with open(f"reports/frac_diff/{name}_d_values.txt", "w", encoding="utf-8") as f:
             f.write(name.upper() + ":\n")
             for d in d_values:
-                fd_series = frac_diff(series, d)
+                fd_series = frac_diff(series, d,thresh)
                 fd_series = fd_series[~np.isnan(fd_series)]
                 if len(fd_series) < 20:
                     pvals.append(np.nan)
@@ -89,4 +90,16 @@ if __name__ == "__main__":
         ("gold", df2),
         ("usdinr", df3),
     ]
-    evaluate_d(assets=assets)
+    # evaluate_d(assets=assets,thresh=1e-4)
+    def get_L(d, thresh=1e-3):
+        w, k = [1.0], 1
+        while True:
+            w_k = -w[-1] * (d - k + 1) / k
+            if abs(w_k) < thresh:
+                break
+            w.append(w_k)
+            k += 1
+        return len(w)
+    print(f"threshold is: {1e-3}")
+    for d in np.arange(0.1,1.0,0.05):
+        print(f"d={d:.2f} → L={get_L(d)}")
