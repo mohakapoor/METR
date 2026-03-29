@@ -57,8 +57,9 @@ Label = 1 if Forward_Return > 0, else 0
 - Decision at T Close, Entry at T+1 Open, Exit at T+3 Close (3-day holding period)
 
 ### Train/Test Split
-- **Train:** ~2451 rows (2013–2023)
-- **Test:** ~453 rows (2024–2025)
+- **Buffer Data:** 2012–2013 (Used for rolling indicators and Fractional Differentiation lookbacks)
+- **Train (Anchor):** 2014–2023 (~2200 rows)
+- **Test:** 2024–2025 (~450 rows)
 - Split by time (no shuffling)
 
 ---
@@ -258,25 +259,25 @@ The final labeling scheme demonstrates that predictive signal strength varies si
 To solve the stationarity-memory trade-off, we implemented **Fractional Differentiation** ($d \in [0.1, 0.9]$). This ensures the features are stationary for ML models while retaining as much historical "memory" as possible, unlike standard integer-differencing ($d=1$).
 
 ### 9.1 Methodology
-We used `src/frac_diff.py` to find the minimum order $d$ that passes the Augmented Dickey-Fuller (ADF) test ($p < 0.05$) for each asset's Close prices.
+We used `src/frac_diff.py` with a threshold of **$10^{-4}$** to balance mathematical precision with data availability (lookback length). Instead of a strict ADF $p < 0.05$ cutoff, parameters were selected by maximizing **Memory Preservation** (correlation with original series) while achieving "good enough" stationarity.
 
-### 9.2 Optimal Order ($d$) per Asset
-| Asset | Optimal $d$ | Characteristic |
-|---|---|---|
-| **Nifty 50** | **0.40** | High trend persistence / Strong memory |
-| **Gold** | **0.30** | Moderate memory |
-| **USD/INR** | **0.30** | Hyper-stationary / Low memory |
+### 9.2 Final Manual Selection ($d$)
+| Asset | Optimal $d$ | Correlation | ADF p-value | Characteristic |
+|---|---|---|---|---|
+| **Nifty 50** | **0.45** | 0.818 | 0.079 | High memory / Strong trend persistence |
+| **Gold** | **0.50** | 0.772 | 0.096 | Best memory-stationarity compromise |
+| **USD/INR** | **0.30** | 0.908 | 0.034 | Perfectly stationary with 91% memory |
 
-These values are automatically persisted in `config.yaml` and used to transform the feature set before training.
+These values are formally locked in `config.yaml`.
 
 ---
 
 ## 10. Research Directions
 
 ### 10.1 In Progress (Phase 3)
-- **Advanced Features:** Fractional Differentiation (Implemented).
-- **Forward-Looking Vol:** India VIX Integration (Implemented/Fetched).
 - **Asset Alignment:** Programmatic alignment of Nifty, Gold, USD/INR, and VIX timestamps (Current focus).
+- **Advanced Features:** Fractional Differentiation (Integrated & Optimized).
+- **Forward-Looking Vol:** India VIX Integration (Ingested).
 
 ### 10.2 Cross-Asset Features (Proposed)
 | Feature | Formula | Signal |

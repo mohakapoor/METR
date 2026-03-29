@@ -141,5 +141,24 @@ Using $10^{-5}$ would cause too many `NaN` values, effectively starving the mode
 | **Gold** | 0.60 | 0.027 |
 | **USD/INR** | 0.30 | 8.14e-07 |
 
-**Conclusion:**
-Moving to $10^{-4}$ and anchoring at 2014 allows us to preserve the "memory" of the series without sacrificing the volume of our training set. These updated parameters have been saved to `config.yaml`.
+### 2026-03-30 — Fractional Differentiation: Manual Parameter Selection
+
+**What was done:**
+Refined the final differentiation order ($d$) by manually evaluating the trade-off between statistical stationarity (ADF p-value) and memory preservation (Correlation with original series).
+
+**Manual Selections & Trade-offs:**
+
+Instead of relying on a strict p-value threshold ($<0.05$), the following manual choices were made to prioritize higher memory preservation for the Nifty and Gold models:
+
+| Asset | Chosen d | Correlation | ADF p-value | Rationale |
+|---|---|---|---|---|
+| **NIFTY** | **0.45** | 0.818 | 0.079 | Best balance; $d=0.50$ dropped correlation too significantly (to 0.76). |
+| **GOLD** | **0.50** | 0.772 | 0.096 | Optimal compromise; $d=0.55+$ aggressively degrades memory. |
+| **USDINR** | **0.30** | 0.908 | 0.034 | Passes stationarity threshold with very high memory preservation. |
+
+**Final Decision:**
+These manual overrides ensure the features maintain a strong long-term memory (0.77 to 0.91 correlation), which is critical for the predictive model, even if Nifty and Gold are slightly below the strict 95% confidence interval for stationarity.
+
+**Next Steps:**
+- Integrate these finalized $d$ values into the feature pipeline.
+- Proceed with cross-asset data alignment anchoring at 2014-01-01.
