@@ -4,3 +4,5 @@
 # Ignore parquet files
 *.parquet
 
+#pycache
+/__pycache__
