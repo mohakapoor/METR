@@ -19,8 +19,8 @@ Exposure_Features:
 - Ret_1d_Lag2
 - Ret_1d_Lag3
 Fractional_Differentiation:
-  gold: 0.6
-  nifty: 0.5
+  gold: 0.5
+  nifty: 0.45
   usdinr: 0.3
 N_Splits: 5
 Portfolio_Weights:
