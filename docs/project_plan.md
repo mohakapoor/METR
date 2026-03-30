@@ -28,13 +28,13 @@ To empirically test this ideology, the project is structured around two core exp
 - [x] Shift evaluation metric from pure balance to tradeable Return Spread.
 - [x] Finalize optimal $k$ scaling for $T=3$ holding periods across all assets.
 
-### Phase 3: Data Pipeline & Advanced Feature Engineering ⏳ *(Up Next)*
+### Phase 3: Data Pipeline & Advanced Feature Engineering ✅ *(Completed)*
 *Improved labels alone without improved features will not yield significantly better predictive power. Cross-market intelligence must be injected before retraining.*
-- [ ] Refactor `src/data_cleaning.ipynb` to apply Triple Barrier logic programmatically.
-- [ ] Align time-series data perfectly across all 3 assets to prevent date mismatches.
-- [ ] Engineer relative-strength cross-asset features (e.g., Equity vs. Gold momentum, Cross-Vol Ratios).
-- [ ] **Integrate India VIX (`^INDIAVIX`):** Introduce forward-looking implied volatility to replace/supplement backward-looking realized volatility (`Vol_20d`).
-- [ ] Map labels to a 3-class target system (e.g., 0=Timeout, 1=Long, 2=Short) and export updated datasets.
+- [x] Refactor `src/data_cleaning.ipynb` to apply Triple Barrier logic programmatically.
+- [x] Align time-series data perfectly across all 3 assets to prevent date mismatches.
+- [x] Engineer relative-strength cross-asset features (e.g., Equity vs. Gold momentum, Cross-Vol Ratios).
+- [x] **Integrate India VIX (`^INDIAVIX`):** Introduce forward-looking implied volatility to replace/supplement backward-looking realized volatility (`Vol_20d`).
+- [x] Map labels to a 3-class target system (e.g., 0=Timeout, 1=Long, 2=Short) and export updated datasets.
 
 ### Phase 4: Model Retraining (Multi-Class) 
 - [ ] Update `config.yaml` to handle multi-class XGBoost parameters and new features.
