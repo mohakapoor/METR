@@ -3,21 +3,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yaml
 
-CONFIG_PATH = "config.yaml"
-with open(CONFIG_PATH, "r") as f:
-    config = yaml.safe_load(f)
-FEATURES = config["Exposure_Features"]
+# CONFIG_PATH = "../config.yaml"
+# with open(CONFIG_PATH, "r") as f:
+#     config = yaml.safe_load(f)
+# FEATURES = config["Exposure_Features"]
 
 def generate_barriers(df, k, T):
     n = len(df)
     labels = [None] * n  # Pad with None so length matches df exactly
     returns = [None] * n # same
     
-    opens = df['Open'].to_list()
-    close_prices = df['Close'].to_list()
-    high = df['High'].to_list()
-    low = df['Low'].to_list()
-    vol_20d = df['Vol_20d'].to_list()
+    opens = df['Open'].to_numpy()
+    close_prices = df['Close'].to_numpy()
+    high = df['High'].to_numpy()
+    low = df['Low'].to_numpy()
+    vol_20d = df['Vol_20d'].to_numpy()
     
     for i in range(n - T - 1):
         if opens[i+1] == 0 or np.isnan(vol_20d[i]):
