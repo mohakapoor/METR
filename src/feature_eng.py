@@ -1,7 +1,9 @@
 import polars as pl
 import pandas as pd
+import frac_diff as frd
+import triple_barrier as tb
 
-def feature_engineering(asset,d,k):
+def generate_features(asset,k,d):
     # base expressions
     c = pl.col("Close")
     o = pl.col("Open")
@@ -39,43 +41,47 @@ def feature_engineering(asset,d,k):
     tr = pl.max_horizontal([tr1,tr2,tr3])
     atr = tr.ewm_mean(span=14,adjust=False)
 
-    # frac diff 
-    close_np = asset["Close"].to_numpy()
-    fd = frac_diff(close_np,d,thresh=1e-4)
 
-    # Labels
-    labels, returns = generate_barriers(asset, k=k, T=3) #T=3 is fixed
-
-    asset = asset.with_columns([
-        pl.Series("FD_Close", fd),
-        pl.Series("Label", labels),
-    ])
-    
-    q = (
+    asset = (
         asset.lazy()
         .with_columns(
             #Returns
             c.pct_change().alias("Ret_1d"),
+            c.pct_change(n=3).alias("Ret_3d"),
             c.pct_change(n=5).alias("Ret_5d"),
+            c.pct_change(n=20).alias("Ret_20d"),
+        )
+        .with_columns(
+            #Volatility
+            pl.col("Ret_1d").rolling_std(window_size=5).alias("Vol_5d"),
+            pl.col("Ret_1d").rolling_std(window_size=20).alias("Vol_20d")
+        )
+        .collect()
+    )
+    # frac diff 
+    close_np = asset["Close"].to_numpy()
+    fd = frd.frac_diff(close_np,d,thresh=1e-4)
 
+    # Labels
+    labels, returns = tb.generate_barriers(asset, k=k, T=3) #T=3 is fixed
+    asset = asset.with_columns([
+        pl.Series("FD_Close", fd),
+        pl.Series("Label", labels),
+    ])
+    q = (
+        asset.lazy()
+        .with_columns(
             #MAs
             c.rolling_mean(window_size=5).alias("MA_5d"),
             c.rolling_mean(window_size=20).alias("MA_20d"),
             
-
             macd_line.alias("Macd_Line"),
             signal_line.alias("Signal_Line"),
 
             #FracDiff Lag
             pl.col('FD_Close').shift(1).alias('FD_Close_Lag1')
-
-
         )
         .with_columns(
-            #Volatility
-            pl.col("Ret_1d").rolling_std(window_size=5).alias("Vol_5d"),
-            pl.col("Ret_1d").rolling_std(window_size=20).alias("Vol_20d"),
-
             
             (pl.col("Macd_Line")-pl.col("Signal_Line")).alias("MACD_Hist"),
             rsi.alias("RSI"),
