@@ -292,24 +292,20 @@ The following features are synthesized in `src/feature_eng.py` and `src/feature_
 
 ---
 
-## 11. Research Directions
+## 11. Project Evolution: Phase 3 Cross-Asset Synthesis ✅ *(Completed)*
 
-### 11.1 In Progress (Phase 3)
-- **Asset Alignment:** Programmatic alignment of Nifty, Gold, USD/INR, and VIX timestamps (Current focus).
-- **Advanced Features:** Fractional Differentiation (Integrated & Optimized).
-- **Forward-Looking Vol:** India VIX Integration (Ingested).
+Phase 3 focused on transforming the single-asset technical indicator approach into a macro-aware, multi-asset framework. The following milestones have been integrated into the current architecture:
 
-### 11.2 Cross-Asset Features (Proposed)
-| Feature | Formula | Signal |
-|---------|---------|--------|
-| Equity-Gold Relative Strength | `Ret_5d_Nifty - Ret_5d_Gold` | Risk appetite |
-| Rupee Stress | `Ret_3d_USDINR` | FII flow pressure |
-| Gold Momentum | `Ret_5d_Gold` | Fear/safety demand |
-| Cross-Vol Ratio | `Vol_20d_Nifty / Vol_20d_Gold` | Panic detection |
+- **Asset Alignment & Temporal Integrity**: Resolved theMCX vs. NSE holiday mismatches, anchoring the dataset on common trading days (3,446 rows) to ensure cross-asset features are synchronized.
+- **Advanced Memory Retention**: Finalized manually selected $d$-values for Fractional Differentiation (0.30–0.50), successfully balancing stationarity with historical signal persistence.
+- **Cross-Market Intelligence**: Implemented **Relative Strength (RS)**, **Risk-Off** binary flags, and **Equity-Stress** indicators to capture Inter-Market Analysis dynamics (e.g., Gold as a hedge for Nifty).
+- **Forward-Looking Volatility**: Integrated **India VIX (`^INDIAVIX`)** to replace backward-looking realized volatility, providing the model with a "fear gauge" signal.
 
-**Prerequisite:** Align all three assets to common trading dates before feature engineering.
+---
 
-### 11.3 Asset-Specific Model Tuning
+## 12. Future Research Directions
+
+### 12.1 Asset-Specific Model Tuning
 Each asset behaves differently and requires tailored hyperparameters:
 
 | Asset | Recommended Approach |
@@ -318,14 +314,17 @@ Each asset behaves differently and requires tailored hyperparameters:
 | **Gold (Commodity)** | Lower learning rate (violent bursts), hedge/safety features |
 | **USD/INR (FX)** | Higher regularization (central bank-managed), mean-reversion focus |
 
-### 11.4 Regime Modeling
+### 12.2 Regime Modeling
 A volatility filter to avoid trading during high-volatility periods. This remains a potential improvement:
 - Train a separate classifier to predict High/Low volatility regimes.
 - Only take Exposure Model trades during "Calm" regimes.
 
+### 12.3 Multi-Class & Meta-Labeling
+Transitioning from binary -1, 0, +1 labeling to a model that can predict the *specific barrier hit type* with higher confidence, potentially using Meta-Labeling (as described by de Prado) to filter out false positives.
+
 ---
 
-## 12. File Reference
+## 13. File Reference
 
 | File | Purpose |
 |------|---------|
