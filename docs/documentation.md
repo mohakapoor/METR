@@ -41,17 +41,15 @@ The pipeline is split into two distinct specialized notebooks:
     - **Asset Joining**: Programmatic merging of Nifty, Gold, USD/INR, and VIX into a unified timeframe.
     - **Holiday Synchronization**: Stabilizing the dataset against non-overlapping market holidays (e.g., MCX vs. NSE).
     - **Lookback Buffer**: Anchoring the training dataset at 2014-01-01 while preserving 2012-2013 for feature warm-up.
+    - **Date Intersection**: Ensuring all cross-asset features are calculated on common trading days (3,446 days total).
 
 2. **Synthesis (`src/feature_engineering.ipynb`)**:
     - **Memory Persistence**: Application of **Fractional Differentiation** (orders $d \in [0.30, 0.45]$) to preserve 77-91% of historical memory while ensuring stationarity.
     - **Macro Indicators**: Integration of the **India VIX** (implied volatility) as a forward-looking fear gauge.
     - **Labeling**: Generating the **Triple Barrier** target (-1, 0, +1) using per-asset volatility-adaptive thresholds ($k$) and a 3-day window ($T$).
-    - **Inter-Asset Dynamics**: Creation of cross-asset features, including:
-        - **Equity-Commodity Spreads**: Relative strength between Nifty and Gold.
-        - **FX Sensitivity**: Impact of USD/INR volatility on Nifty momentum.
-        - **Volatility Ratios**: Cross-market volatility regime detection.
+    - **Inter-Asset Dynamics**: Creation of cross-asset features (RS, Risk-Off, FX Sensitivity).
 
-**Total Features:** 21 (and growing in Phase 3).
+**Total Features:** 19 (Main) + 7 (Regime and Cross-Asset).
 
 ### Label Definition
 ```
@@ -235,27 +233,16 @@ Instead of simple binary labels (up/down), a forward-scanning Triple Barrier Met
 
 Where $\sigma$ is the daily volatility (computed as the rolling 20-day standard deviation of daily returns).
 
-**Advantages over initial binary approach:**
-- Filters out noise (tiny moves become 0 instead of forced 0/1)
-- Volatility-adaptive (barriers scale dynamically with market conditions)
-- Reflects actual directional conviction.
+### 8.1 In-Depth Labeling Logic
+Traditional binary labeling (Up/Down) forces a model to guess direction regardless of whether the move was meaningful or just noise. **METR** uses a volatility-adaptive sequence:
 
-### 8.1 Chosen Parameters ($T=3$)
-After conducting a multi-asset grid analysis, resolving intraday tie-breaker edge cases (defaulting to 0), and switching the primary evaluation metric from mathematical **Balance Score** to **Return Spread** (see `docs/observations.md`), I locked in the following parameters:
+Entry: $P_0$ (at Open of $T+1$)  
+Upper Barrier: $P_0 \cdot (1 + k\sigma)$  
+Lower Barrier: $P_0 \cdot (1 - k\sigma)$  
+Vertical Barrier: $T=3$ sessions  
 
-| Asset | k (Barrier Width) | T (Time Horizon) | Expected Class Balance (-1 / 0 / +1) | Return Spread |
-|---|---|---|---|---|
-| **Nifty** | $1.5\sigma$ | 3 Days | 35.2% / 34.3% / 30.5% | 2.72% |
-| **Gold** | $1.75\sigma$ | 3 Days | 38.7% / 34.1% / 27.3% | 2.71% |
-| **USDINR** | $1.5\sigma$ | 3 Days | 33.3% / 32.7% / 34.1% | 0.82% |
-
-**Reasoning:**
-While traditional mathematical grid search favored $T=5$ with extreme barriers ($2.5\sigma$) just to perfectly balance the classes to exactly 33.3%, expecting a financial asset to move $2.5\sigma$ in 5 days forces the model to hunt for highly improbable outlier events. 
-
-I chose $T=3$ with tighter barriers ($1.5\sigma - 1.75\sigma$) and selected them by maximizing the **Return Spread** (+1 Mean Return minus -1 Mean Return). This ensures the labels are capturing a real, tradeable directional edge rather than just perfectly dividing noise into mathematical thirds. This configuration still preserves a healthy ~33-34% timeout class (`0`), successfully filtering out non-directional market chop. Gold requires slightly wider barriers ($1.75\sigma$) due to its naturally higher intraday volatility.
-
-**Final Insight on Labeling:**
-The final labeling scheme demonstrates that predictive signal strength varies significantly across assets. Unrestricted markets like Equities (Nifty) and Commodities (Gold) exhibit immensely stronger directional separability (~2.7% Return Spread) than centrally-managed FX markets (USDINR at 0.82%). This empirically proves that the ceiling on predictive performance is not purely a modeling limitation, but is heavily constrained by the underlying behavior and microstructure of the asset class itself.
+#### Rationale for $k=1.5\sigma$
+While a $2.0\sigma$ barrier is mathematically "pure," it only triggers in 5% of cases. By using $1.5\sigma$, we capture meaningful "outperformance" while maintaining enough samples for the XGBoost model to find generalized patterns.
 
 ---
 
@@ -274,18 +261,45 @@ The study uses `src/frac_diff.py` with a threshold of **$10^{-4}$** to balance m
 | **Gold** | **0.50** | 0.772 | 0.096 | Best memory-stationarity compromise |
 | **USD/INR** | **0.30** | 0.908 | 0.034 | Perfectly stationary with 91% memory |
 
-These values are formally locked in `config.yaml`.
+---
+
+## 10. Feature Dictionary (In-Depth)
+
+The following features are synthesized in `src/feature_eng.py` and `src/feature_engineering.ipynb`:
+
+### 10.1 Momentum & Price Action
+- **`Ret_1d, Ret_3d, Ret_5d, Ret_20d`**: Standard log-returns for capturing multi-timeframe momentum trends.
+- **`Intraday_Return`**: `(Close - Open) / Open`. Measures within-session conviction; often identifies institutional accumulation during choppy sessions.
+- **`Gap`**: `(Open - Prev_Close) / Prev_Close`. Captures overnight sentiment shifts and sensitivity to global market moves.
+- **`Close_Pos_Range`**: `(Close - Low) / (High - Low)`. Pinpoints "pin-bars" and price rejection at extremes. Values >0.8 indicate bullish rejection of low prices.
+- **`Range_Expansion`**: `(High - Low) / (Prev_High - Prev_Low)`. A quick-response volatility spike indicator.
+
+### 10.2 Volatility & Regime Detection
+- **`Vol_Ratio`**: `Vol_5d / Vol_20d`. Detects when short-term volatility is expanding relative to the monthly baseline—a primary predictor of trend reversals.
+- **`ATR_Pct`**: `Average True Range / Price`. Normalizes risk across time, allowing the model to compare volatility in low-price vs. high-price regimes.
+- **`BB_Pct`**: Bollinger Band %B. Quantifies where price sits relative to its 20-day standard deviation bands. Excellent for identifying over-extended mean-reversion setups.
+
+### 10.3 Stationarity & Memory (FracDiff)
+- **`FD_Close`**: Fractionally Differentiated Close. The crown jewel of the logic; it maintains the underlying trend signal (memory) while achieving statistical stationarity (as verified by ADF tests).
+- **`FD_Close_Lag1`**: Catching the first derivative of the stationary series to identify momentum in a "safe" (non-integrated) space.
+
+### 10.4 Cross-Asset Dynamics (Phase 3)
+- **`Relative Strength (RS)`**: `Gold_Ret_5d - Nifty_Ret_5d`. Measures risk-appetite shifts. When Gold leads Nifty, capital is often fleeing to safety.
+- **`Usdinr_Ret_x`**: Currency returns as a macro-economic pressure gauge. High USDINR volatility often signals FII (Foreign Institutional Investor) outflow.
+- **`Momentum_Align`**: Checks if the individual asset's return sign matches the broader benchmark—identifying "true" strength vs. "lucky" market-wide drifts.
+- **`Risk_Off` Indicator**: Binary flag (1 if Gold Leads, 0 otherwise).
+- **`Equity_Stress` Indicator**: Binary flag (1 if Nifty 5d-return < 0).
 
 ---
 
-## 10. Research Directions
+## 11. Research Directions
 
-### 10.1 In Progress (Phase 3)
+### 11.1 In Progress (Phase 3)
 - **Asset Alignment:** Programmatic alignment of Nifty, Gold, USD/INR, and VIX timestamps (Current focus).
 - **Advanced Features:** Fractional Differentiation (Integrated & Optimized).
 - **Forward-Looking Vol:** India VIX Integration (Ingested).
 
-### 10.2 Cross-Asset Features (Proposed)
+### 11.2 Cross-Asset Features (Proposed)
 | Feature | Formula | Signal |
 |---------|---------|--------|
 | Equity-Gold Relative Strength | `Ret_5d_Nifty - Ret_5d_Gold` | Risk appetite |
@@ -295,7 +309,7 @@ These values are formally locked in `config.yaml`.
 
 **Prerequisite:** Align all three assets to common trading dates before feature engineering.
 
-### 10.3 Asset-Specific Model Tuning
+### 11.3 Asset-Specific Model Tuning
 Each asset behaves differently and requires tailored hyperparameters:
 
 | Asset | Recommended Approach |
@@ -304,29 +318,30 @@ Each asset behaves differently and requires tailored hyperparameters:
 | **Gold (Commodity)** | Lower learning rate (violent bursts), hedge/safety features |
 | **USD/INR (FX)** | Higher regularization (central bank-managed), mean-reversion focus |
 
-### 10.4 Regime Modeling
+### 11.4 Regime Modeling
 A volatility filter to avoid trading during high-volatility periods. This remains a potential improvement:
 - Train a separate classifier to predict High/Low volatility regimes.
 - Only take Exposure Model trades during "Calm" regimes.
 
 ---
 
-## 11. File Reference
+## 12. File Reference
 
 | File | Purpose |
 |------|---------|
-| `src/fetch_data.py` | Downloads raw OHLCV and VIX data |
-| `src/frac_diff.py` | Calculates and saves optimal fractional differentiation $d$ |
-| `src/data_cleaning.ipynb` | Join, align, and stabilize asset timestamps |
-| `src/feature_engineering.ipynb` | Advanced indicators, labels, and training set synthesis |
-| `src/train_exposure.py` | XGBoost training with GridSearchCV |
-| `config.yaml` | Central configuration and research parameters |
-| `reports/frac_diff/` | ADF p-value and Memory-Correlation plots |
-| `docs/observations.md` | Detailed lab logs and manual trade-off decisions |
+| `src/fetch_data.py` | Automated historical data ingestion (yfinance) |
+| `src/data_cleaning.ipynb` | Join, align, and synchronize multi-asset timestamps |
+| `src/feature_engineering.ipynb` | Final synthesized dataset generation and Train/Test split |
+| `src/feature_eng.py` | Mathematical utility functions for technical indicators |
+| `src/triple_barrier.py` | Algorithm for forward-scanning volatility labeling |
+| `src/train_exposure.py` | XGBoost training logic with TimeSeriesSplit |
+| `data/processed/train/` | Cleaned 2014-2023 training shards |
+| `data/processed/test/` | Out-of-sample 2024-2025 evaluation sets |
+| `config.yaml` | Global feature lists, $d$-values, and modeling thresholds |
 
 ---
 
-## 11. Conclusion
+## 13. Conclusion
 
 The METR project successfully built a controlled experimental framework for comparing ML-based entry timing against random chance. The core finding is that **standard technical indicators provide a weak but measurable edge** (~0.53 CV ROC-AUC) for 3-day Nifty direction prediction, but this edge is **not statistically significant** when tested against random baselines (p=0.38).
 
@@ -337,5 +352,3 @@ The project identified two clear paths for improvement:
 Both are documented above and ready for implementation.
 
 ---
-
-
