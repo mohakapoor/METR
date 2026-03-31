@@ -27,6 +27,28 @@ Exposure_Features:
 - Usdinr_Vol_Ratio
 - Momentum_Align
 - Risk_Off
+Cross_Asset_Features:
+  gold:
+  - Nifty_Gold_RS_5d
+  - Usdinr_Ret_3d
+  - Usdinr_Ret_5d
+  - Usdinr_Vol_Ratio
+  - Momentum_Align
+  - Equity_Stress
+  nifty:
+  - Gold_Nifty_RS_5d
+  - Gold_Nifty_RS_20d
+  - Usdinr_Ret_3d
+  - Usdinr_Ret_5d
+  - Usdinr_Vol_Ratio
+  - Momentum_Align
+  - Risk_Off
+  usdinr:
+  - Nifty_Ret_5d
+  - Gold_Ret_5d
+  - Nifty_Vol_Ratio
+  - Risk_Off
+  - Equity_Stress
 Fractional_Differentiation:
   gold: 0.5
   nifty: 0.45
