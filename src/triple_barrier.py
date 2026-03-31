@@ -67,7 +67,7 @@ def passes_filter(pct_neg1, pct_0, pct_pos1):
 
 
 K_VALUES = [0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.5,3.0]
-T_VALUES = [3, 5,10]  
+T_VALUES = [3, 5, 7, 10]  
 
 # After running multiple T values i realised T = 3 is the best because higher values dont offer significantly better improvements and add ambiguity 
 
@@ -134,67 +134,69 @@ def evaluate_triple_barrier_grid(assets):
                     f.write(header + "\n")
                     f.write(str(out_counts) + "\n")
 
-        # --- PLOT (T=3 ONLY) ---
-        t3_results = [r for r in results if r[6] == 3]
-        # if not t3_results:
-        #     print(f"No T=3 runs found for {name}, skipping plot.")
-        #     continue
+        # --- PLOT (Individual per T) ---
+        for t_val in T_VALUES:
+            t_results = [r for r in results if r[6] == t_val]
+            if not t_results:
+                continue
 
-        labels_list = [r[0] for r in t3_results]
-        pct_neg1 = [r[1] for r in t3_results]
-        pct_0 = [r[2] for r in t3_results]
-        pct_pos1 = [r[3] for r in t3_results]
-        scores = [r[4] for r in t3_results]
-        passed_list = [r[5] for r in t3_results]
-        spreads = [r[7] for r in t3_results]
+            labels_list = [r[0] for r in t_results]
+            pct_neg1 = [r[1] for r in t_results]
+            pct_0 = [r[2] for r in t_results]
+            pct_pos1 = [r[3] for r in t_results]
+            scores = [r[4] for r in t_results]
+            passed_list = [r[5] for r in t_results]
+            spreads = [r[7] for r in t_results]
 
-        fig = plt.figure(figsize=(15, 8))
-        gs = fig.add_gridspec(2, 2, width_ratios=[1, 1], height_ratios=[1, 1])
-        fig.suptitle(f"Triple Barrier Grid (T=3) — {name.upper()} (max class ≤ {MAX_CLASS_PCT}%)", fontsize=16, fontweight='bold')
+            fig = plt.figure(figsize=(15, 8))
+            gs = fig.add_gridspec(2, 2, width_ratios=[1, 1], height_ratios=[1, 1])
+            fig.suptitle(f"Triple Barrier Grid (T={t_val}) — {name.upper()} (max class ≤ {MAX_CLASS_PCT}%)", fontsize=16, fontweight='bold')
 
-        ax1 = fig.add_subplot(gs[0, 0])
-        ax2 = fig.add_subplot(gs[1, 0])
-        ax3 = fig.add_subplot(gs[:, 1])
+            ax1 = fig.add_subplot(gs[0, 0])
+            ax2 = fig.add_subplot(gs[1, 0])
+            ax3 = fig.add_subplot(gs[:, 1])
 
-        # ax1: label distribution
-        x = np.arange(len(labels_list))
-        width = 0.25
-        ax1.bar(x - width, pct_neg1, width, label='-1 (stop loss)', color='#e74c3c')
-        ax1.bar(x, pct_0, width, label='0 (timeout)', color='#95a5a6')
-        ax1.bar(x + width, pct_pos1, width, label='+1 (profit)', color='#2ecc71')
-        ax1.axhline(y=MAX_CLASS_PCT, color='black', linestyle='--', alpha=0.5, label=f'{MAX_CLASS_PCT}% cap')
-        ax1.set_ylabel('Percentage (%)')
-        ax1.set_title('Label Distribution')
-        ax1.set_xticks(x)
-        ax1.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
-        ax1.legend()
-        ax1.set_ylim(0, 85)
+            # ax1: label distribution
+            x = np.arange(len(labels_list))
+            width = 0.25
+            ax1.bar(x - width, pct_neg1, width, label='-1 (stop loss)', color='#e74c3c')
+            ax1.bar(x, pct_0, width, label='0 (timeout)', color='#95a5a6')
+            ax1.bar(x + width, pct_pos1, width, label='+1 (profit)', color='#2ecc71')
+            ax1.axhline(y=MAX_CLASS_PCT, color='black', linestyle='--', alpha=0.5, label=f'{MAX_CLASS_PCT}% cap')
+            ax1.set_ylabel('Percentage (%)')
+            ax1.set_title('Label Distribution')
+            ax1.set_xticks(x)
+            ax1.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
+            ax1.legend()
+            ax1.set_ylim(0, 85)
 
-        # ax2: balance score
-        bar_colors = ['#2ecc71' if p else '#e74c3c' for p in passed_list]
-        if any(passed_list):
-            best_score = min(s for s, p in zip(scores, passed_list) if p)
-            best_idx = next(i for i, (s, p) in enumerate(zip(scores, passed_list)) if p and s == best_score)
-            bar_colors[best_idx] = '#f39c12'
-        ax2.bar(x, scores, color=bar_colors, width=0.5)
-        ax2.set_ylabel('Balance Score')
-        ax2.set_title('Distance from Perfect Balance (lower = better)')
-        ax2.set_xticks(x)
-        ax2.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
+            # ax2: balance score
+            bar_colors = ['#2ecc71' if p else '#e74c3c' for p in passed_list]
+            if any(passed_list):
+                passed_scores = [s for s, p in zip(scores, passed_list) if p]
+                if passed_scores:
+                    best_score = min(passed_scores)
+                    best_idx = next(i for i, (s, p) in enumerate(zip(scores, passed_list)) if p and s == best_score)
+                    bar_colors[best_idx] = '#f39c12'
+            ax2.bar(x, scores, color=bar_colors, width=0.5)
+            ax2.set_ylabel('Balance Score')
+            ax2.set_title('Distance from Perfect Balance (lower = better)')
+            ax2.set_xticks(x)
+            ax2.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
 
-        # ax3: return spread
-        ax3.plot(x, spreads, marker='o', color='#3498db', linewidth=2)
-        ax3.axhline(0, color='gray', linestyle='--', alpha=0.5)
-        ax3.set_ylabel('Spread (%)')
-        ax3.set_title('Return Spread (+1 mean vs -1 mean)')
-        ax3.set_xticks(x)
-        ax3.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
+            # ax3: return spread
+            ax3.plot(x, spreads, marker='o', color='#3498db', linewidth=2)
+            ax3.axhline(0, color='gray', linestyle='--', alpha=0.5)
+            ax3.set_ylabel('Spread (%)')
+            ax3.set_title('Return Spread (+1 mean vs -1 mean)')
+            ax3.set_xticks(x)
+            ax3.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
 
-        plt.tight_layout()
-        out_path = f"reports/tripple_barrier/{name}_grid_Results_t3.png"
-        plt.savefig(out_path, dpi=150)
-        plt.close()
-        print(f"Plot saved: {out_path}")
+            plt.tight_layout()
+            out_path = f"reports/tripple_barrier/{name}_grid_results_t{t_val}.png"
+            plt.savefig(out_path, dpi=150)
+            plt.close()
+            print(f"Plot saved: {out_path}")
 
 
 
