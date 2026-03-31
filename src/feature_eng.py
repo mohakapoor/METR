@@ -3,7 +3,7 @@ import pandas as pd
 import frac_diff as frd
 import triple_barrier as tb
 
-def generate_features(asset,k,d):
+def generate_features(asset, k, d, T=5):
     # base expressions
     c = pl.col("Close")
     o = pl.col("Open")
@@ -63,7 +63,7 @@ def generate_features(asset,k,d):
     fd = frd.frac_diff(close_np,d,thresh=1e-4)
 
     # Labels
-    labels, returns = tb.generate_barriers(asset, k=k, T=3) #T=3 is fixed
+    labels, returns = tb.generate_barriers(asset, k=k, T=T)
     asset = asset.with_columns([
         pl.Series("FD_Close", fd),
         pl.Series("Label", labels),
