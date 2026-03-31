@@ -156,9 +156,174 @@ Instead of relying on a strict p-value threshold ($<0.05$), the following manual
 | **GOLD** | **0.50** | 0.772 | 0.096 | Optimal compromise; $d=0.55+$ aggressively degrades memory. |
 | **USDINR** | **0.30** | 0.908 | 0.034 | Passes stationarity threshold with very high memory preservation. |
 
+
 **Final Decision:**
 These manual overrides ensure the features maintain a strong long-term memory (0.77 to 0.91 correlation), which is critical for the predictive model, even if Nifty and Gold are slightly below the strict 95% confidence interval for stationarity.
 
 **Next Steps:**
 - Integrate these finalized $d$ values into the feature pipeline.
 - Proceed with cross-asset data alignment anchoring at 2014-01-01.
+
+---
+
+### 2026-03-31 — Phase 4: Multi-Class XGBoost Training & Feature Analysis
+
+**What was done:**
+Upgraded the training pipeline (`src/train_exposure.py`) from binary classification to multi-class (`multi:softprob`, 3 classes: -1, 0, +1 remapped to 0, 1, 2). Unified mode only — each asset trains on `Exposure_Features + Cross_Asset_Features[asset]`. Ran full GridSearchCV (128 combinations × 5 folds) on an A5000 GPU. Separately ran `src/feature_analysis.py` (updated for one-vs-rest correlations) across all 3 assets.
+
+---
+
+#### Training Results — Nifty Unified (28 features)
+
+| Metric | Value |
+|---|---|
+| Best CV Accuracy | 0.4123 |
+| Train Accuracy | 0.5768 |
+| Test Accuracy | 0.3942 |
+| Overfit Gap | 0.1826 ⚠️ |
+| High-Conf +1 trades (>0.60) | None |
+
+**Best Params:** `max_depth=3, lr=0.03, n_estimators=100, colsample_bytree=0.9, subsample=0.7, reg_alpha=0.1, reg_lambda=1.0`
+
+| Class | Precision | Recall | F1 |
+|---|---|---|---|
+| -1 (stop-loss) | 0.35 | 0.54 | 0.42 |
+| 0 (timeout) | 0.51 | 0.47 | 0.49 |
+| +1 (profit) | 0.30 | **0.12** | 0.17 |
+
+#### Training Results — Gold Unified (27 features)
+
+| Metric | Value |
+|---|---|
+| Best CV Accuracy | 0.4137 |
+| Train Accuracy | 0.6806 |
+| Test Accuracy | 0.4744 |
+| Overfit Gap | 0.2062 ⚠️ |
+| High-Conf +1 trades (>0.60) | None |
+
+**Best Params:** `max_depth=4, lr=0.05, n_estimators=100, colsample_bytree=0.9, subsample=0.7, reg_alpha=0.1, reg_lambda=0.5`
+
+| Class | Precision | Recall | F1 |
+|---|---|---|---|
+| -1 (stop-loss) | 0.48 | 0.71 | 0.58 |
+| 0 (timeout) | 0.47 | 0.62 | 0.53 |
+| +1 (profit) | 0.38 | **0.04** | 0.07 |
+
+#### Training Results — USDINR Unified (26 features)
+
+| Metric | Value |
+|---|---|
+| Best CV Accuracy | 0.3735 |
+| Train Accuracy | 0.5605 |
+| Test Accuracy | 0.3675 |
+| Overfit Gap | 0.1930 ⚠️ |
+| High-Conf +1 trades (>0.60) | None |
+
+**Best Params:** `max_depth=4, lr=0.05, n_estimators=100, colsample_bytree=0.9, subsample=0.7, reg_alpha=0.0, reg_lambda=1.0`
+
+| Class | Precision | Recall | F1 |
+|---|---|---|---|
+| -1 (stop-loss) | 0.29 | 0.29 | 0.29 |
+| 0 (timeout) | 0.36 | 0.23 | 0.28 |
+| +1 (profit) | 0.42 | **0.56** | 0.48 |
+
+---
+
+#### Key Findings from Feature Analysis & Results
+
+**1. The Timeout Magnet — Vol_20d**
+`Vol_20d` showed the single strongest correlation with label `0` (timeout) across all assets:
+- Nifty: `+0.3947` vs timeout
+- Gold: `+0.3857` vs timeout
+
+In high-volatility regimes the 3-day barriers are rarely breached cleanly — price oscillates within the bands returning label 0. This means `Vol_20d` dominates model decisions toward timeout prediction, suppressing +1/-1 recall. It functions as a regime detector but at the cost of directional signal.
+
+**2. Divergent +1 Recall (Gold vs USDINR)**
+- **Gold (0.04 recall)**: The model is almost entirely blind to profit setups in Gold, defaulting heavily to predicting stop-losses. This suggests the current features for Gold are primarily "fear indicators" (matching its -1 correlate).
+- **USDINR (0.56 recall)**: Surprisingly, USDINR shows the best directional capture for the +1 class. While absolute accuracy is lower (0.37), the model has a clear preference for predicting profit setups, likely capturing the slow-drift nature of the currency.
+
+**3. +1 Recall Crisis in Equities (0.12 for Nifty)**
+The model catches only 12% of actual profitable moves. The strongest +1 predictors found were cross-asset features:
+- `Gold_Nifty_RS_5d`: +0.1367 vs +1
+- `Risk_Off`: +0.1171 vs +1
+
+**4. Momentum Dynamics**
+- Nifty: `ROC_10 → -0.1727 vs +1`. Strong momentum precedes reversals.
+- Gold: `MACD_Hist → +0.1286 vs +1`. Momentum predicts continuation.
+
+---
+
+#### Feature Reduction Decision
+
+Several features found to be redundant or harmful and will be dropped before next training run:
+
+| Dropped Feature | Reason |
+|---|---|
+| `Ret_1d`, `Ret_3d` | Subsumed by `Ret_5d`; lower gain, same directional signal |
+| `Trend_Strength` | Mathematically identical to `Ret_20d` |
+| `Vol_20d` | Timeout-magnet; absolute vol already captured by `ATR_Pct` |
+| `FD_Close_Lag1` | 1-day shift of `FD_Close` with minimal incremental signal |
+| `RSI` | Weaker than `ROC_10` for both Nifty and Gold |
+| `MA_Ratio` | Weaker than `Price_vs_MA20` |
+| `Close_Pos_Range` | Signal already captured by `Intraday_Return` and `BB_Pct` |
+
+**Result: 21 → 13 Exposure Features.** Config updated accordingly.
+
+---
+
+### 2026-03-31 — Phase 4: Iteration 2 (Trimmed Feature Set)
+
+**What was done:**
+Retrained all 3 unified models using the trimmed 13 per-asset technical features (removed 8 redundant/noise features). Compared metrics against the Iteration 1 baseline.
+
+---
+
+#### Comparison Summary (Iteration 1 vs. Iteration 2)
+
+| Asset | Test Accuracy ( $\Delta$ ) | +1 Recall ( $\Delta$ ) | Overfit Gap ( $\Delta$ ) | Target Status |
+|---|---|---|---|---|
+| **NIFTY** | **0.4209 (+2.6%)** | 0.11 (-1.0%) | 0.1853 (Same) | **IMPROVED ACC** |
+| **GOLD** | 0.4499 (-2.4%) | 0.04 (Same) | 0.2339 (+2.7%) | **DECLINED** |
+| **USDINR** | 0.3742 (Same) | 0.42 (-14.0%) | 0.1875 (Same) | **LOST SIGNAL** |
+
+---
+
+#### Detailed Results — Nifty (Balanced 13 features)
+
+| Metric | Value | Baseline Comparison |
+|---|---|---|
+| Test Accuracy | 0.4209 | +2.6% |
+| -1 Recall (SL) | **0.69** | +15.0% |
+| 0 Recall (TO) | 0.41 | -6.0% (Better) |
+| +1 Recall (TP) | 0.11 | Stagnant |
+
+**Observation:** Removing `Vol_20d` and other redundant features significantly helped Nifty's overall accuracy and its ability to identify -1 signals. The model is now less of a "timeout magnet," but still fails to pick up the +1 directional signal.
+
+#### Detailed Results — USDINR (Balanced 13 features)
+
+| Metric | Value | Baseline Comparison |
+|---|---|---|
+| Test Accuracy | 0.3742 | Same |
+| +1 Recall (TP) | 0.42 | -14.0% |
+
+**Observation:** Trimming features hurt USDINR's directional prediction capacity. The "management" of the currency likely requires a broader feature set to capture subtle deviations, even if they appear collinear on the surface.
+
+---
+
+#### Strategic Pivot: Forward-Looking Volatility
+
+The "Profit Hunter" problem (low +1 recall) persists because our features are lagging technicals. 
+- **Absolute Realized Volatility** (Vol_20d) is a noise magnet.
+- **Relative Realized Volatility** (Vol_Ratio) helps, but isn't enough.
+
+**Next Priority:** **India VIX Integration**.
+VIX provides a forward-looking expectation of volatility. This is expected to:
+1. Improve the **Triple Barrier width** (making it regime-aware).
+2. Clean the **Feature Space** (replacing lagged vol with forward expectations).
+3. Increase **+1 Recall** by segregating noise from true volatility expansion.
+
+**Next Steps:**
+- Prepare India VIX raw data for processing.
+- Re-run `feature_eng.py` with IV integration.
+- Pivot to **Phase 5: Regime-Aware Modeling**.
+
