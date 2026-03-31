@@ -322,8 +322,93 @@ VIX provides a forward-looking expectation of volatility. This is expected to:
 2. Clean the **Feature Space** (replacing lagged vol with forward expectations).
 3. Increase **+1 Recall** by segregating noise from true volatility expansion.
 
-**Next Steps:**
-- Prepare India VIX raw data for processing.
-- Re-run `feature_eng.py` with IV integration.
-- Pivot to **Phase 5: Regime-Aware Modeling**.
+---
+
+## **Phase 4: Final Experimental Conclusion**
+
+Based on empirical evaluation of triple barrier labeling across multiple horizons and barrier widths, **T = 5** was selected as the optimal prediction horizon.
+
+This choice reflects the best trade-off between:
+* **Label clarity (reduced noise)**
+* **Class balance (usable distribution of -1 / 0 / +1)**
+* **Economic significance (higher return spread)**
+
+---
+
+### **Why T = 5 is Optimal**
+
+#### 1. T = 3 → Too Noisy
+At T = 3:
+* Labels are dominated by **short-term randomness**
+* Higher proportion of **ambiguous or weak outcomes**
+* Lower return separation between +1 and -1
+
+**Result:** The model fails to learn meaningful directional patterns and defaults toward neutral or defensive predictions.
+
+#### 2. T = 5 → Best Balance
+At T = 5:
+* **Return spread increases** across all assets
+* **+1 labels become more meaningful** (stronger average returns)
+* **Class distribution stabilizes** (reduced dominance of any single class)
+* Noise reduces while still preserving enough samples
+
+**Result:** Labels become both **learnable and economically relevant**, enabling the model to capture short-term directional structure.
+
+#### 3. T = 7 and T = 10 → Diminishing Returns
+At higher horizons:
+* Marginal improvement in spread
+* Increasing dominance of **strong, obvious moves only**
+* Reduction in **sample diversity and learnability**
+* Shift away from short-term dynamics toward medium-term trends
+
+**Result:** Labels become cleaner but **less representative of typical market behavior**, reducing generalization and weakening model robustness.
+
+---
+
+### **Asset-Specific k Values**
+
+Different assets exhibit different volatility structures, so barrier widths must be calibrated accordingly.
+
+#### **NIFTY → k = 1.5**
+* Produces **strong return separation (~2%+)**
+* Minimizes ambiguous (0) labels
+* Maintains **balanced directional classes (~45–50%)**
+
+→ Captures meaningful index-level moves without excessive noise.
+
+#### **GOLD → k = 1.75**
+* Gold requires **wider barriers** due to higher volatility persistence
+* k = 1.75:
+  * Reduces noise from small fluctuations
+  * Increases **directional clarity and payoff magnitude**
+* Avoids over-filtering seen at extreme k (e.g., 2.0)
+
+→ Focuses on **high-confidence macro-driven moves**.
+
+#### **USDINR → k = 1.5**
+* FX exhibits **lower volatility and tighter ranges**
+* k = 1.5:
+  * Reduces neutral outcomes
+  * Maintains sufficient +1 / -1 balance
+  * Improves spread (~1%) without over-filtering
+
+→ Provides **usable directional signal in a low-volatility regime**.
+
+---
+
+### **Final Justification**
+
+The selected configuration:
+
+```yaml
+Triple_Barrier:
+  T: 5
+  k_nifty: 1.5
+  k_gold: 1.75
+  k_usdinr: 1.5
+```
+
+represents an optimal balance between **signal strength (return spread)**, **label quality (reduced noise)**, and **model learnability (sufficient sample diversity)**. 
+
+**Bottom Line:** T = 5 was selected because it is the first horizon where market structure becomes statistically learnable without drifting into slower, less relevant dynamics.
 
