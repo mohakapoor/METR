@@ -74,86 +74,82 @@ for asset in ASSETS:
     y_train = y_train[valid_train].astype(int)
     y_test  = y_test[valid_test].astype(int)
 
-    modes = {
-        "isolated": EXP_FEATURES,
-        "unified":  EXP_FEATURES + CROSS_FEATURES.get(asset, []),
-    }
+    # Unified: per-asset technical features + cross-asset macro features
+    features = EXP_FEATURES + CROSS_FEATURES.get(asset, [])
 
-    for mode, features in modes.items():
-        # Filter to features that actually exist in the parquet
-        available = [f for f in features if f in train.columns]
-        missing   = set(features) - set(available)
-        if missing:
-            print(f"  [WARN] {mode} — missing features skipped: {missing}")
+    # Filter to features that actually exist in the parquet
+    available = [f for f in features if f in train.columns]
+    missing   = set(features) - set(available)
+    if missing:
+        print(f"  [WARN] Missing features skipped: {missing}")
 
-        X_train = train.select(available).to_pandas()[valid_train]
-        X_test  = test.select(available).to_pandas()[valid_test]
+    X_train = train.select(available).to_pandas()[valid_train]
+    X_test  = test.select(available).to_pandas()[valid_test]
 
-        print(f"\n── {mode.upper()} | {len(available)} features ──")
-        print(f"   Train: {X_train.shape[0]} rows | Test: {X_test.shape[0]} rows")
-        print(f"   Label dist (train): { y_train.value_counts().sort_index().to_dict() }")
+    print(f"\n── UNIFIED | {len(available)} features ──")
+    print(f"   Train: {X_train.shape[0]} rows | Test: {X_test.shape[0]} rows")
+    print(f"   Label dist (train): { y_train.value_counts().sort_index().to_dict() }")
 
-        # Base estimator
-        base_clf = xgb.XGBClassifier(
-            objective="multi:softprob",
-            num_class=3,
-            random_state=42,
-            device="cuda",
-            eval_metric="mlogloss",
-            early_stopping_rounds=20,
-        )
+    # Base estimator
+    base_clf = xgb.XGBClassifier(
+        objective="multi:softprob",
+        num_class=3,
+        random_state=42,
+        device="cuda",
+        eval_metric="mlogloss",
+        early_stopping_rounds=20,
+    )
 
-        search = GridSearchCV(
-            estimator=base_clf,
-            param_grid=param_grid,
-            scoring="accuracy",        # multi-class; swap to roc_auc_ovr if preferred
-            cv=tscv,
-            verbose=0,
-            n_jobs=1,
-        )
+    search = GridSearchCV(
+        estimator=base_clf,
+        param_grid=param_grid,
+        scoring="accuracy",
+        cv=tscv,
+        verbose=0,
+        n_jobs=1,
+    )
 
-        search.fit(
-            X_train, y_train,
-            eval_set=[(X_test, y_test)],
-            verbose=True,
-        )
+    search.fit(
+        X_train, y_train,
+        eval_set=[(X_test, y_test)],
+        verbose=False,
+    )
 
-        best = search.best_estimator_
-        print(f"   Best CV Accuracy : {search.best_score_:.4f}")
-        print(f"   Best Params      : {search.best_params_}")
+    best = search.best_estimator_
+    print(f"   Best CV Accuracy : {search.best_score_:.4f}")
+    print(f"   Best Params      : {search.best_params_}")
 
-        # ── Evaluation ────────────────────────────────────────────────────────
-        test_probs  = best.predict_proba(X_test)    # shape (n, 3)
-        train_probs = best.predict_proba(X_train)
+    # ── Evaluation ────────────────────────────────────────────────────────────
+    test_probs  = best.predict_proba(X_test)    # shape (n, 3)
+    train_probs = best.predict_proba(X_train)
 
-        test_preds  = np.argmax(test_probs,  axis=1)
-        train_preds = np.argmax(train_probs, axis=1)
+    test_preds  = np.argmax(test_probs,  axis=1)
+    train_preds = np.argmax(train_probs, axis=1)
 
-        train_acc = accuracy_score(y_train, train_preds)
-        test_acc  = accuracy_score(y_test,  test_preds)
-        gap       = train_acc - test_acc
+    train_acc = accuracy_score(y_train, train_preds)
+    test_acc  = accuracy_score(y_test,  test_preds)
+    gap       = train_acc - test_acc
 
-        print(f"\n   Train Acc: {train_acc:.4f} | Test Acc: {test_acc:.4f} | Gap: {gap:.4f}", end="")
-        if   gap > 0.10: print("  ⚠️  OVERFITTING")
-        elif gap > 0.05: print("  ⚠️  Mild overfit")
-        else:            print("  ✅ Healthy")
+    print(f"\n   Train Acc: {train_acc:.4f} | Test Acc: {test_acc:.4f} | Gap: {gap:.4f}", end="")
+    if   gap > 0.10: print("  ⚠️  OVERFITTING")
+    elif gap > 0.05: print("  ⚠️  Mild overfit")
+    else:            print("  ✅ Healthy")
 
-        # High-confidence +1 trades (class index 2 = original label +1)
-        profit_prob = test_probs[:, 2]   # P(label = +1)
-        hc_mask     = profit_prob >= THRESHOLD
-        if hc_mask.sum() > 0:
-            # Map XGB labels back to original for readability
-            actual_orig = y_test_raw[valid_test].values[hc_mask]
-            win_rate    = (actual_orig == 1).mean()
-            baseline    = (y_test_raw[valid_test] == 1).mean()
-            print(f"   High-Conf +1 (>{THRESHOLD}): {hc_mask.sum()} trades | "
-                  f"Win Rate: {win_rate:.4f} | vs Baseline: {'+' if win_rate > baseline else ''}{(win_rate - baseline)*100:.1f}%")
-        else:
-            print(f"   No high-confidence +1 trades above {THRESHOLD}")
+    # High-confidence +1 trades (class index 2 = original label +1)
+    profit_prob = test_probs[:, 2]   # P(label = +1)
+    hc_mask     = profit_prob >= THRESHOLD
+    if hc_mask.sum() > 0:
+        actual_orig = y_test_raw[valid_test].values[hc_mask]
+        win_rate    = (actual_orig == 1).mean()
+        baseline    = (y_test_raw[valid_test] == 1).mean()
+        print(f"   High-Conf +1 (>{THRESHOLD}): {hc_mask.sum()} trades | "
+              f"Win Rate: {win_rate:.4f} | vs Baseline: {'+' if win_rate > baseline else ''}{(win_rate - baseline)*100:.1f}%")
+    else:
+        print(f"   No high-confidence +1 trades above {THRESHOLD}")
 
-        print(f"\n{classification_report(y_test, test_preds, target_names=CLASS_NAMES, zero_division=0)}")
+    print(f"\n{classification_report(y_test, test_preds, target_names=CLASS_NAMES, zero_division=0)}")
 
-        # ── Save ──────────────────────────────────────────────────────────────
-        save_path = f"models/{asset}_{mode}.joblib"
-        joblib.dump(best, save_path)
-        print(f"   ✅ Saved → {save_path}")
+    # ── Save ──────────────────────────────────────────────────────────────────
+    save_path = f"models/{asset}_unified.joblib"
+    joblib.dump(best, save_path)
+    print(f"   ✅ Saved → {save_path}")
