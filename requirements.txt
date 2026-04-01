@@ -1,4 +1,3 @@
-
 polars>=0.20.0
 numpy
 pandas
@@ -10,3 +9,5 @@ notebook
 yfinance
 pyyaml
 statsmodels
+joblib
+pyarrow
