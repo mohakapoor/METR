@@ -1,50 +1,50 @@
 ASSET: USDINR (Logistic Regression Baseline)
 ============================================================
-Best CV ROC AUC: 0.5276
-Best Params: {'logreg__C': 10, 'logreg__penalty': 'l2', 'logreg__solver': 'lbfgs'}
-Train AUC: 0.5874 | Test AUC: 0.5393
+Best CV ROC AUC: 0.5225
+Best Params: {'logreg__C': 100, 'logreg__penalty': 'l2', 'logreg__solver': 'lbfgs'}
+Train AUC: 0.5982 | Test AUC: 0.5468
 
 --- Metrics at Threshold: 0.5 ---
-Win Rate: 0.4412 | Trade Fraction: 0.3029
+Win Rate: 0.4177 | Trade Fraction: 0.3527
               precision    recall  f1-score   support
 
-    Fail (0)       0.62      0.72      0.66       269
-     Win (1)       0.44      0.33      0.38       180
+    Fail (0)       0.61      0.66      0.64       270
+     Win (1)       0.42      0.37      0.39       178
 
-    accuracy                           0.56       449
-   macro avg       0.53      0.53      0.52       449
-weighted avg       0.55      0.56      0.55       449
+    accuracy                           0.54       448
+   macro avg       0.52      0.52      0.51       448
+weighted avg       0.54      0.54      0.54       448
 
 --- Metrics at Threshold: 0.52 ---
-Win Rate: 0.4595 | Trade Fraction: 0.2472
+Win Rate: 0.4508 | Trade Fraction: 0.2723
               precision    recall  f1-score   support
 
-    Fail (0)       0.62      0.78      0.69       269
-     Win (1)       0.46      0.28      0.35       180
+    Fail (0)       0.62      0.75      0.68       270
+     Win (1)       0.45      0.31      0.37       178
 
-    accuracy                           0.58       449
-   macro avg       0.54      0.53      0.52       449
-weighted avg       0.55      0.58      0.55       449
+    accuracy                           0.58       448
+   macro avg       0.54      0.53      0.52       448
+weighted avg       0.55      0.58      0.56       448
 
 --- Metrics at Threshold: 0.55 ---
-Win Rate: 0.4557 | Trade Fraction: 0.1759
+Win Rate: 0.4667 | Trade Fraction: 0.2009
               precision    recall  f1-score   support
 
-    Fail (0)       0.61      0.84      0.71       269
-     Win (1)       0.46      0.20      0.28       180
+    Fail (0)       0.62      0.82      0.71       270
+     Win (1)       0.47      0.24      0.31       178
 
-    accuracy                           0.58       449
-   macro avg       0.53      0.52      0.49       449
-weighted avg       0.55      0.58      0.54       449
+    accuracy                           0.59       448
+   macro avg       0.54      0.53      0.51       448
+weighted avg       0.56      0.59      0.55       448
 
 --- Metrics at Threshold: 0.58 ---
-Win Rate: 0.4808 | Trade Fraction: 0.1158
+Win Rate: 0.4306 | Trade Fraction: 0.1607
               precision    recall  f1-score   support
 
-    Fail (0)       0.61      0.90      0.73       269
-     Win (1)       0.48      0.14      0.22       180
+    Fail (0)       0.61      0.85      0.71       270
+     Win (1)       0.43      0.17      0.25       178
 
-    accuracy                           0.59       449
-   macro avg       0.55      0.52      0.47       449
-weighted avg       0.56      0.59      0.52       449
+    accuracy                           0.58       448
+   macro avg       0.52      0.51      0.48       448
+weighted avg       0.54      0.58      0.53       448
 

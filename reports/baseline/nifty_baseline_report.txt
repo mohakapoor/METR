@@ -1,50 +1,50 @@
 ASSET: NIFTY (Logistic Regression Baseline)
 ============================================================
-Best CV ROC AUC: 0.5348
+Best CV ROC AUC: 0.5400
 Best Params: {'logreg__C': 0.001, 'logreg__penalty': 'l2', 'logreg__solver': 'lbfgs'}
-Train AUC: 0.5731 | Test AUC: 0.5519
+Train AUC: 0.5784 | Test AUC: 0.5508
 
 --- Metrics at Threshold: 0.5 ---
-Win Rate: 0.1429 | Trade Fraction: 0.0156
+Win Rate: 0.3333 | Trade Fraction: 0.0469
               precision    recall  f1-score   support
 
-    Fail (0)       0.60      0.98      0.74       271
-     Win (1)       0.14      0.01      0.01       178
+    Fail (0)       0.60      0.95      0.74       271
+     Win (1)       0.33      0.04      0.07       177
 
-    accuracy                           0.59       449
-   macro avg       0.37      0.49      0.38       449
-weighted avg       0.42      0.59      0.45       449
+    accuracy                           0.59       448
+   macro avg       0.47      0.49      0.40       448
+weighted avg       0.50      0.59      0.47       448
 
 --- Metrics at Threshold: 0.52 ---
-Win Rate: 0.0000 | Trade Fraction: 0.0000
+Win Rate: 0.0000 | Trade Fraction: 0.0067
               precision    recall  f1-score   support
 
-    Fail (0)       0.60      1.00      0.75       271
-     Win (1)       0.00      0.00      0.00       178
+    Fail (0)       0.60      0.99      0.75       271
+     Win (1)       0.00      0.00      0.00       177
 
-    accuracy                           0.60       449
-   macro avg       0.30      0.50      0.38       449
-weighted avg       0.36      0.60      0.45       449
+    accuracy                           0.60       448
+   macro avg       0.30      0.49      0.37       448
+weighted avg       0.36      0.60      0.45       448
 
 --- Metrics at Threshold: 0.55 ---
 Win Rate: 0.0000 | Trade Fraction: 0.0000
               precision    recall  f1-score   support
 
     Fail (0)       0.60      1.00      0.75       271
-     Win (1)       0.00      0.00      0.00       178
+     Win (1)       0.00      0.00      0.00       177
 
-    accuracy                           0.60       449
-   macro avg       0.30      0.50      0.38       449
-weighted avg       0.36      0.60      0.45       449
+    accuracy                           0.60       448
+   macro avg       0.30      0.50      0.38       448
+weighted avg       0.37      0.60      0.46       448
 
 --- Metrics at Threshold: 0.58 ---
 Win Rate: 0.0000 | Trade Fraction: 0.0000
               precision    recall  f1-score   support
 
     Fail (0)       0.60      1.00      0.75       271
-     Win (1)       0.00      0.00      0.00       178
+     Win (1)       0.00      0.00      0.00       177
 
-    accuracy                           0.60       449
-   macro avg       0.30      0.50      0.38       449
-weighted avg       0.36      0.60      0.45       449
+    accuracy                           0.60       448
+   macro avg       0.30      0.50      0.38       448
+weighted avg       0.37      0.60      0.46       448
 
