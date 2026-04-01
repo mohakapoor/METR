@@ -18,7 +18,7 @@ CROSS_FEATURES = config.get("Cross_Asset_Features", {})
 ASSETS = ["nifty", "gold", "usdinr"]
 
 print("============================================================")
-print("  FEATURE SEPARATION ANALYSIS: +1 (Profit) vs -1 (Stop-Loss)")
+print("  FEATURE SEPARATION ANALYSIS: META-LABEL (WIN VS LOSS)")
 print("  Metric: ROC AUC (|AUC - 0.5|)")
 print("============================================================\n")
 
@@ -30,22 +30,22 @@ for asset in ASSETS:
 
     df = pl.read_parquet(train_path)
     
-    # Filter for directional labels only
-    # Labels: -1 (Stop-Loss), 1 (Profit). Ignore 0 (Timeout).
-    df_sig = df.filter((pl.col("Label") == 1) | (pl.col("Label") == -1))
+    # Meta_Label: 1 (Winning Signal), 0 (Losing/Timeout Signal)
+    # We drop nulls but keep all 0s and 1s to see the full "Filter" power
+    df_meta = df.filter(pl.col("Meta_Label").is_not_null())
     
-    if df_sig.height < 10:
-        print(f"[SKIP] {asset.upper()} — Not enough directional samples ({df_sig.height})")
+    if df_meta.height < 10:
+        print(f"[SKIP] {asset.upper()} — Not enough meta-labeled samples ({df_meta.height})")
         continue
 
-    y = (df_sig["Label"] == 1).cast(pl.Int8).to_numpy() # 1 for Profit, 0 for Stop-Loss
+    y = df_meta["Meta_Label"].to_numpy().astype(int)
     features = EXP_FEATURES + CROSS_FEATURES.get(asset, [])
     # Deduplicate while preserving order
     features = list(dict.fromkeys(f for f in features if f in df.columns))
 
     results = []
     for f in features:
-        vals = df_sig[f].to_numpy()
+        vals = df_meta[f].to_numpy()
         
         # Handle NaNs/Infs
         mask = np.isfinite(vals)
@@ -55,7 +55,7 @@ for asset in ASSETS:
         try:
             auc = roc_auc_score(y[mask], vals[mask])
             separation = abs(auc - 0.5)
-            direction = "Higher = Profit" if auc > 0.5 else "Higher = Loss"
+            direction = "Higher = Win Conviction" if auc > 0.5 else "Higher = Fail/Noise"
             results.append({
                 "feature": f,
                 "auc": auc,
@@ -71,10 +71,10 @@ for asset in ASSETS:
     print(f"ASSET: {asset.upper()}")
     print(f"{'-'*60}")
     if not top_5:
-        print("  No features with measurable separation found.")
+        print("  No features with measurable meta-separation found.")
     else:
         print(f"{'Feature':25s} | {'AUC':>6} | {'Separation':>10} | {'Direction'}")
-        print(f"{'-'*68}")
+        print(f"{'-'*75}")
         for r in top_5:
             print(f"{r['feature']:25s} | {r['auc']:6.3f} | {r['separation']:10.3f} | {r['direction']}")
     print("\n")
