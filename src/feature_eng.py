@@ -53,6 +53,10 @@ def generate_features(asset, k, d, T=5):
         )
         .with_columns(
             #Volatility
+            pl.when(pl.col("Ret_5d")>0)
+            .then(1)
+            .otherwise(-1)
+            .alias("Signal"),
             pl.col("Ret_1d").rolling_std(window_size=5).alias("Vol_5d"),
             pl.col("Ret_1d").rolling_std(window_size=20).alias("Vol_20d")
         )
@@ -66,7 +70,7 @@ def generate_features(asset, k, d, T=5):
     labels, returns = tb.generate_barriers(asset, k=k, T=T)
     asset = asset.with_columns([
         pl.Series("FD_Close", fd),
-        pl.Series("Label", labels),
+        pl.Series("TB_Label", labels),
     ])
     q = (
         asset.lazy()
@@ -77,6 +81,15 @@ def generate_features(asset, k, d, T=5):
             
             macd_line.alias("Macd_Line"),
             signal_line.alias("Signal_Line"),
+
+            #Computing Actual Label
+            pl.when(
+                ((pl.col("Signal") == 1) & (pl.col("TB_Label") == 1)) |
+                ((pl.col("Signal") == -1) & (pl.col("TB_Label") == -1))
+                )
+            .then(1)
+            .otherwise(0)
+            .alias("Meta_Label"),
 
             #FracDiff Lag
             pl.col('FD_Close').shift(1).alias('FD_Close_Lag1')
