@@ -412,3 +412,35 @@ represents an optimal balance between **signal strength (return spread)**, **lab
 
 **Bottom Line:** T = 5 was selected because it is the first horizon where market structure becomes statistically learnable without drifting into slower, less relevant dynamics.
 
+---
+
+### 2026-04-01 — Phase 5: Meta-Labeling Transition & Signal Analysis
+
+**What was done:**
+Implemented the **Meta-Labeling** architecture in `src/feature_eng.py`. This marks a fundamental shift in strategy from predicting market direction to predicting the **reliability of a primary signal**.
+
+1. **Primary Signal Implementation**: Established a 5-day momentum rule as the "Primary Boss" signal ($Signal=1$ if $Ret\_5d > 0$, else $-1$).
+2. **Meta-Label Definition**: Created `Meta_Label` (Binary):
+   - **1 (Pass)**: The momentum signal correctly predicted the Triple Barrier outcome.
+   - **0 (Fail)**: The signal was wrong or the trade timed out.
+3. **Signal Calibration**: Evaluated the raw performance of the primary signal across all assets to establish a baseline for the secondary XGBoost model.
+
+**Baseline Signal Results:**
+
+| Asset | Base Win Rate (Overall) | Directional Win Rate (Ex-Timeout) |
+|---|---|---|
+| **Nifty 50** | **41.24%** | **49.15%** |
+| **Gold** | **46.31%** | **51.32%** |
+| **USD/INR** | **40.76%** | **50.66%** |
+
+**Key Observations:**
+1. **The "Coin Flip" Reality**: The directional win rates (~49-51%) confirm that a simple 5-day momentum rule is essentially a coin flip. This perfectly justifies the move to Meta-Labeling.
+2. **The Secondary Model's Mission**: The XGBoost model's objective is no longer "Where is the price going?" but rather "Should I trust this momentum signal right now?". By learning the *conditions* (volatility, macro context, technical regime) under which momentum succeeds, we can filter the ~40% accuracy signals into high-conviction trades.
+3. **Architecture Cleanup**: 
+    - Resolved Polars `TypeError` by migrating from Python `and` to bitwise `&` logic in the expression API.
+    - Standardized `TB_Label` (Ground Truth) vs `Meta_Label` (Model Target).
+
+**Next Steps:**
+- Update `src/train_exposure.py` to support binary classification on `Meta_Label`.
+- Implement **Precision-Recall optimization** specifically for the Meta-Label 1 class (minimizing False Positives).
+- Evaluate if this "Filter" approach successfully breaks the 18-20% overfitting gap seen in Phase 4.
