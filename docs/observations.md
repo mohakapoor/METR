@@ -441,6 +441,30 @@ Implemented the **Meta-Labeling** architecture in `src/feature_eng.py`. This mar
     - Standardized `TB_Label` (Ground Truth) vs `Meta_Label` (Model Target).
 
 **Next Steps:**
-- Update `src/train_exposure.py` to support binary classification on `Meta_Label`.
-- Implement **Precision-Recall optimization** specifically for the Meta-Label 1 class (minimizing False Positives).
-- Evaluate if this "Filter" approach successfully breaks the 18-20% overfitting gap seen in Phase 4.
+- Run `src/train_trade_filter.py` (XGBoost) to capture non-linear interactions.
+- Implement **Precision-Recall optimization** specifically for the Meta-Label 1 class.
+- Evaluate if the tree-based model can break the "Zero-Recall" barrier seen in Nifty's linear baseline.
+
+---
+
+### 2026-04-02 — Phase 6: Logistic Regression Baseline Analysis
+
+**What was done:**
+Established a quantitative baseline using Logistic Regression (`src/train_baseline.py`) to measure the performance of a simple linear model on the Meta-Labeling task. Analyzed the trade-off between **Win Rate** and **Trade Fraction** across multiple probability thresholds.
+
+**Baseline Performance Summary:**
+
+| Asset | Threshold | Win Rate | Trade Fraction | Notes |
+|---|---|---|---|---|
+| **NIFTY** | 0.50 | 14.29% | 1.56% | Model effectively fails; no signal > 0.52 |
+| **NIFTY** | 0.55+ | 0.00% | 0.00% | No non-linear interactions captured |
+| **GOLD** | 0.50 | 45.83% | 10.69% | Worse than random 5-day momentum |
+| **GOLD** | **0.55** | **66.67%** | **2.67%** | High precision but nearly no trades |
+| **GOLD** | **0.58** | **71.43%** | **1.56%** | Extremely Rare / Selective |
+| **USDINR** | 0.50 | 44.12% | 30.29% | High participation, Zero edge |
+| **USDINR** | 0.58 | 48.08% | 11.58% | Even high conviction fails to hit 50/50 |
+
+**Key Observations:**
+1. **Linear Failure**: The linear model (AUC ~0.53 - 0.55) fails to isolate high-probability trades without effectively killing the strategy (Trade Fraction < 2%). This confirms the market structure is non-linear—"Momentum Quality" depends on something more complex than simple weighted sums of indicators.
+2. **Nifty's "Signal Black Hole"**: For Nifty, the linear baseline is unable to find *any* signal with > 52% conviction. This confirms that the 5-day momentum alone is extremely noisy for Indian equities in the current regime.
+3. **The Benchark**: We now have a clear target for the XGBoost model. Success means achieving **Win Rates > 55%** with **Trade Fractions > 10%**.
