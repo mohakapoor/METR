@@ -69,7 +69,7 @@ def passes_filter(pct_neg1, pct_0, pct_pos1):
 K_VALUES = [0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.5,3.0]
 T_VALUES = [3, 5, 7, 10]  
 
-# After running multiple T values i realised T = 3 is the best because higher values dont offer significantly better improvements and add ambiguity 
+# After running multiple T values i realised T = 5 is the best because higher values dont offer significantly better improvements and add ambiguity 
 
 
 def evaluate_triple_barrier_grid(assets):
