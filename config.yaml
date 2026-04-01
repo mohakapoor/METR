@@ -3,15 +3,23 @@ Exposure_Features:
 - Ret_20d
 - Vol_5d
 - Vol_Ratio
+- Vol Efficiency
 - ATR_Pct
 - FD_Close
 - MACD_Hist
+- RSI
+- RSI_Trend
 - ROC_10
 - Gap
 - BB_Pct
 - Price_vs_MA20
 - Intraday_Return
+- Gap_Intraday_Convinction
 - Range_Expansion
+- VIX_Relative
+- VIX_Shock
+- VIX_ATR_Ratio
+- VIX_Momentum_Efficiency
 Cross_Asset_Features:
   gold:
   - Nifty_Gold_RS_5d
@@ -20,6 +28,8 @@ Cross_Asset_Features:
   - Usdinr_Vol_Ratio
   - Momentum_Align
   - Equity_Stress
+  - RS_Momentum_Decoupling
+  - Usdinr_Stress_Filter
   nifty:
   - Gold_Nifty_RS_5d
   - Gold_Nifty_RS_20d
@@ -28,6 +38,8 @@ Cross_Asset_Features:
   - Usdinr_Vol_Ratio
   - Momentum_Align
   - Risk_Off
+  - RS_Momentum_Decoupling
+  - Usdinr_Stress_Filter
   usdinr:
   - Nifty_Ret_5d
   - Gold_Ret_5d
