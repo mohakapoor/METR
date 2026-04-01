@@ -1,0 +1,50 @@
+ASSET: GOLD (Logistic Regression Baseline)
+============================================================
+Best CV ROC AUC: 0.5581
+Best Params: {'logreg__C': 0.001, 'logreg__penalty': 'l2', 'logreg__solver': 'lbfgs'}
+Train AUC: 0.5960 | Test AUC: 0.5584
+
+--- Metrics at Threshold: 0.5 ---
+Win Rate: 0.4583 | Trade Fraction: 0.1069
+              precision    recall  f1-score   support
+
+    Fail (0)       0.59      0.90      0.72       264
+     Win (1)       0.46      0.12      0.19       185
+
+    accuracy                           0.58       449
+   macro avg       0.53      0.51      0.45       449
+weighted avg       0.54      0.58      0.50       449
+
+--- Metrics at Threshold: 0.52 ---
+Win Rate: 0.4643 | Trade Fraction: 0.0624
+              precision    recall  f1-score   support
+
+    Fail (0)       0.59      0.94      0.73       264
+     Win (1)       0.46      0.07      0.12       185
+
+    accuracy                           0.58       449
+   macro avg       0.53      0.51      0.42       449
+weighted avg       0.54      0.58      0.48       449
+
+--- Metrics at Threshold: 0.55 ---
+Win Rate: 0.6667 | Trade Fraction: 0.0267
+              precision    recall  f1-score   support
+
+    Fail (0)       0.59      0.98      0.74       264
+     Win (1)       0.67      0.04      0.08       185
+
+    accuracy                           0.60       449
+   macro avg       0.63      0.51      0.41       449
+weighted avg       0.62      0.60      0.47       449
+
+--- Metrics at Threshold: 0.58 ---
+Win Rate: 0.7143 | Trade Fraction: 0.0156
+              precision    recall  f1-score   support
+
+    Fail (0)       0.59      0.99      0.74       264
+     Win (1)       0.71      0.03      0.05       185
+
+    accuracy                           0.59       449
+   macro avg       0.65      0.51      0.40       449
+weighted avg       0.64      0.59      0.46       449
+

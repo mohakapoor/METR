@@ -1,0 +1,50 @@
+ASSET: USDINR (Logistic Regression Baseline)
+============================================================
+Best CV ROC AUC: 0.5276
+Best Params: {'logreg__C': 10, 'logreg__penalty': 'l2', 'logreg__solver': 'lbfgs'}
+Train AUC: 0.5874 | Test AUC: 0.5393
+
+--- Metrics at Threshold: 0.5 ---
+Win Rate: 0.4412 | Trade Fraction: 0.3029
+              precision    recall  f1-score   support
+
+    Fail (0)       0.62      0.72      0.66       269
+     Win (1)       0.44      0.33      0.38       180
+
+    accuracy                           0.56       449
+   macro avg       0.53      0.53      0.52       449
+weighted avg       0.55      0.56      0.55       449
+
+--- Metrics at Threshold: 0.52 ---
+Win Rate: 0.4595 | Trade Fraction: 0.2472
+              precision    recall  f1-score   support
+
+    Fail (0)       0.62      0.78      0.69       269
+     Win (1)       0.46      0.28      0.35       180
+
+    accuracy                           0.58       449
+   macro avg       0.54      0.53      0.52       449
+weighted avg       0.55      0.58      0.55       449
+
+--- Metrics at Threshold: 0.55 ---
+Win Rate: 0.4557 | Trade Fraction: 0.1759
+              precision    recall  f1-score   support
+
+    Fail (0)       0.61      0.84      0.71       269
+     Win (1)       0.46      0.20      0.28       180
+
+    accuracy                           0.58       449
+   macro avg       0.53      0.52      0.49       449
+weighted avg       0.55      0.58      0.54       449
+
+--- Metrics at Threshold: 0.58 ---
+Win Rate: 0.4808 | Trade Fraction: 0.1158
+              precision    recall  f1-score   support
+
+    Fail (0)       0.61      0.90      0.73       269
+     Win (1)       0.48      0.14      0.22       180
+
+    accuracy                           0.59       449
+   macro avg       0.55      0.52      0.47       449
+weighted avg       0.56      0.59      0.52       449
+
