@@ -51,7 +51,7 @@ The pipeline is split into two distinct specialized notebooks:
     - **Meta-Labeling**: Synthesizing the `Meta_Label` (1 if Signal = Win, 0 if Signal = Fail/Timeout).
     - **Inter-Asset Dynamics**: Creation of cross-asset features (RS, Risk-Off, FX Sensitivity).
 
-**Total Features:** 13 (Optimized) + 7 (Macro and Cross-Asset).
+**Total Features:** 13 (Base) + 12 (Core Interaction) + 5 (Macro/VIX).
 
 ### Meta-Label Definition
 ```
@@ -282,20 +282,28 @@ The following features are synthesized in `src/feature_eng.py` and `src/feature_
 - **`Range_Expansion`**: `(High - Low) / (Prev_High - Prev_Low)`. A quick-response volatility spike indicator.
 
 ### 10.2 Volatility & Regime Detection
-- **`Vol_Ratio`**: `Vol_5d / Vol_20d`. Detects when short-term volatility is expanding relative to the monthly baseline—a primary predictor of trend reversals.
-- **`ATR_Pct`**: `Average True Range / Price`. Normalizes risk across time, allowing the model to compare volatility in low-price vs. high-price regimes.
-- **`BB_Pct`**: Bollinger Band %B. Quantifies where price sits relative to its 20-day standard deviation bands. Excellent for identifying over-extended mean-reversion setups.
+- **`Vol_Ratio`**: `Vol_5d / Vol_20d`. Detects when short-term volatility is expanding relative to the monthly baseline.
+- **`Vol Efficiency`**: `Ret_5d / Vol_20d`. A "Risk-Adjusted Momentum" signal identifying clean trends vs. choppy noise.
+- **`ATR_Pct`**: `Average True Range / Price`. Normalizes risk across time.
+- **`BB_Pct`**: Bollinger Band %B. Quantifies where price sits relative to its bands.
 
 ### 10.3 Stationarity & Memory (FracDiff)
-- **`FD_Close`**: Fractionally Differentiated Close. The crown jewel of the logic; it maintains the underlying trend signal (memory) while achieving statistical stationarity (as verified by ADF tests).
-- **`FD_Close_Lag1`**: Catching the first derivative of the stationary series to identify momentum in a "safe" (non-integrated) space.
+- **`FD_Close`**: Fractionally Differentiated Close. Maintains historical memory while ensuring statistical stationarity.
+- **`RSI`**: Standard Relative Strength Index (14-period).
+- **`RSI_Trend`**: `RSI * Ret_5d`. A high-conviction interaction identifying "overbought but strong" vs. "overbought and weak" regimes.
+- **`Gap_Intraday_Conviction`**: `Gap * Intraday_Return`. Identifies sessions where overnight sentiment and intraday action align for a powerful trend.
 
 ### 10.4 Cross-Asset Dynamics (Phase 3)
-- **`Relative Strength (RS)`**: `Gold_Ret_5d - Nifty_Ret_5d`. Measures risk-appetite shifts. When Gold leads Nifty, capital is often fleeing to safety.
-- **`Usdinr_Ret_x`**: Currency returns as a macro-economic pressure gauge. High USDINR volatility often signals FII (Foreign Institutional Investor) outflow.
-- **`Momentum_Align`**: Checks if the individual asset's return sign matches the broader benchmark—identifying "true" strength vs. "lucky" market-wide drifts.
-- **`Risk_Off` Indicator**: Binary flag (1 if Gold Leads, 0 otherwise).
-- **`Equity_Stress` Indicator**: Binary flag (1 if Nifty 5d-return < 0).
+- **`Relative Strength (RS)`**: `Gold_Ret_5d - Nifty_Ret_5d`. Measures risk-appetite shifts.
+- **`RS_Momentum_Decoupling`**: `Gold_Nifty_RS_5d * Ret_5d`. Identifies when an asset is trending *against* the broader risk-off flow—a signal of extreme internal strength.
+- **`Usdinr_Stress_Filter`**: `Usdinr_Ret_5d * Momentum_Align`. Filters out signals that are occurring during high currency-regime stress.
+- **`Risk_Off` / **`Equity_Stress`**: Binary macro flags.
+
+### 10.5 Macro & Volatility Regime (India VIX)
+- **`VIX_Relative`**: `VIX / SMA(VIX, 20)`. Identifies the current stress level relative to the monthly average.
+- **`VIX_Shock`**: 1-day change in VIX. Measures the "Rate of Fear" increase.
+- **`VIX_ATR_Ratio`**: `VIX / ATR_Pct`. Measures the decoupling between realized volatility (ATR) and implied volatility (VIX). High values suggest "Overpriced Fear."
+- **`VIX_Momentum_Efficiency`**: `Ret_5d / (VIX_Shock + 1e-9)`. Identifies trends that are persisting *despite* rising fear.
 
 ---
 
@@ -303,10 +311,10 @@ The following features are synthesized in `src/feature_eng.py` and `src/feature_
 
 The project has pivoted from raw directional prediction to a sophisticated **Meta-Labeling** architecture.
 
-- **Baseline Established**: A Logistic Regression baseline proved that the relationship between technicals and "Momentum Quality" is non-linear.
-- **Nifty Benchmark**: The linear model fails to cross the 52% probability threshold on Nifty, establishing a "Zero-Recall" benchmark for XGBoost to beat.
-- **Feature Separation**: Identified that **Relative Strength vs Gold** is the strongest "Green Light" for Nifty momentum success.
-- **Forward-Looking Volatility**: Transitioned all models to utilize **India VIX** as the primary regime detector.
+- **Baseline Expansion**: Re-ran the Logistic Regression baseline with new interaction features, reaching a **ROC AUC of 0.54 – 0.56**.
+- **The "Linear Wall"**: Verified that even with VIX and RS features, a linear model cannot generate high-conviction Nifty signals (Zero-Recall at 0.55+ thresholds).
+- **Interaction Alpha**: Confirmed that Gold retains a strong linear signal (**66% Win Rate**) even at high thresholds.
+- **XGBoost Pivot**: Transitioning to Binary Meta-Labeling to leverage non-linear feature interactions.
 
 ---
 
