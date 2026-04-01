@@ -5,11 +5,11 @@
 
 **METR** is a controlled empirical study designed to isolate true statistical predictive edge from market noise and lucky streaks. By restricting the models to exclusively mathematical market microstructure (momentum, volatility regimes, mean reversion) and forcing a fixed 3-day holding period, the project evaluates whether standard assets (Equities, Commodities, FX) possess predictable short-term inefficiencies.
 
-> **Current Status:** Phase 6 — **Meta-Labeling & Signal Filtering**. We have pivoted from raw price prediction to **Meta-Labeling**, where a secondary XGBoost model filters a primary momentum signal. All models are now calibrated for $T=5$ session windows.
+> **Current Status:** Phase 7 — **Meta-Training & Filter Overhaul**. We have synthesized **Interaction Features** (ATR_MACD, RSI_Trend) and integrated **India VIX** as a forward-looking regime filter. The current focus is on overhauling the XGBoost Meta-Model for Binary Meta-Labeling.
 
 ## Core Experiments
-1. **Meta-Filter vs. Baseline (The Edge Test):** Evaluating our XGBoost "Trade Filter" against a Logistic Regression baseline. We measure "Meta-Precision" (Win Rate) to see if the model can successfully identify which momentum signals are trustworthy.
-2. **Signal Filtering (The Precision Test):** Quantifying how many "False Positive" trades can be removed by the Meta-Model while preserving enough "True Positive" opportunities (Trade Fraction).
+1. **Meta-Filter vs. Baseline (The Edge Test):** Evaluating our XGBoost "Trade Filter" against the Interaction-Enhanced Logistic Regression baseline. We measure "Meta-Precision" (Win Rate) to see if the model can successfully identify which momentum signals are trustworthy.
+2. **Regime Detection (The Context Test):** Quantifying the impact of **India VIX** and **Cross-Asset Relative Strength** on signal quality—specifically focusing on the "Non-Linear Wall" in Nifty.
 
 ## Project Structure
 ```text
