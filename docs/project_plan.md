@@ -46,8 +46,14 @@ To empirically test this ideology, the project is structured around two core exp
 - [x] Establish a Linear Baseline using `src/train_baseline.py` (Logistic Regression).
 - [x] Document the "Zero-Recall" wall on Nifty for linear models.
 
-### Phase 6: Meta-Training & Filter Optimization
-- [ ] Train the primary XGBoost Meta-Model using `train_trade_filter.py`.
-- [ ] Optimize the model for **Meta-Precision** (Win Rate > 55%).
-- [ ] Calibrate the `THRESHOLD` lever for Nifty, Gold, and USDINR.
-- [ ] Final evaluation vs. the Logistic Regression baseline.
+### Phase 6: Interaction Features & Macro Regime ✅ *(Completed)*
+- [x] Engineer High-Conviction Interaction Features (`ATR_MACD`, `Vol Efficiency`, `RSI_Trend`).
+- [x] Integrate **India VIX** for implied volatility regime detection.
+- [x] Re-establish the **Interaction Baseline** (Logistic Regression + 5.0% ROC AUC boost).
+- [x] Identify the "Non-Linear Requirement" for Nifty.
+
+### Phase 7: Meta-Training & Filter Overhaul 🚀 *(In Progress)*
+- [ ] Overhaul `src/train_trade_filter.py` for **Binary Meta-Labeling**.
+- [ ] Implement multi-threshold evaluation (0.50, 0.52, 0.55, 0.58).
+- [ ] Calibrate the `THRESHOLD` lever for Nifty, Gold, and USDINR to reach >55% precision.
+- [ ] Final performance comparison vs. the Logistic Regression baseline.
