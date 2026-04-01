@@ -36,17 +36,18 @@ To empirically test this ideology, the project is structured around two core exp
 - [x] **Integrate India VIX (`^INDIAVIX`):** Introduce forward-looking implied volatility to replace/supplement backward-looking realized volatility (`Vol_20d`).
 - [x] Map labels to a 3-class target system (e.g., 0=Timeout, 1=Long, 2=Short) and export updated datasets.
 
-### Phase 4: Model Retraining (Multi-Class) 
-- [ ] Update `config.yaml` to handle multi-class XGBoost parameters and new features.
-- [ ] Train the new 3-class models on the Triple Barrier labels.
-- [ ] Evaluate model output probabilities against the new $T=3$ Return Spread.
-- [ ] Compare isolated models (Nifty-only features predicting Nifty) vs Unified models (all features predicting Nifty).
+### Phase 4: Multi-Asset Meta-Labeling ✅ *(Completed)*
+- [x] Pivot from 3-class price prediction to Binary Meta-Labeling.
+- [x] Implement the `Signal` + `Meta_Label` generation in `src/feature_eng.py`.
+- [x] Identify $T=5$ as the optimal prediction horizon for return separation.
 
-### Phase 5: Regime & Unified Modeling
-- [ ] Implement Regime Modeling (Calm vs Volatile) to dynamically size model convictions.
-- [ ] Test regime-aware weighting across the entire unified portfolio.
+### Phase 5: Feature Separation & Baseline ✅ *(Completed)*
+- [x] Develop `src/feature_separation.py` to identify "Green Light" indicators.
+- [x] Establish a Linear Baseline using `src/train_baseline.py` (Logistic Regression).
+- [x] Document the "Zero-Recall" wall on Nifty for linear models.
 
-### Phase 6: Final Evaluation & Documentation
-- [ ] Re-run Monte Carlo random baseline against the updated 3-class model.
-- [ ] Synthesize empirical findings on predictive ceilings across different asset classes.
-- [ ] Finalize `documentation.md`.
+### Phase 6: Meta-Training & Filter Optimization
+- [ ] Train the primary XGBoost Meta-Model using `train_trade_filter.py`.
+- [ ] Optimize the model for **Meta-Precision** (Win Rate > 55%).
+- [ ] Calibrate the `THRESHOLD` lever for Nifty, Gold, and USDINR.
+- [ ] Final evaluation vs. the Logistic Regression baseline.

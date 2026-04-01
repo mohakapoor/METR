@@ -8,12 +8,13 @@
 ## 1. Project Overview
 
 ### Objective
-Determine if historical price dynamics (momentum, mean reversion, volatility regimes) contain predictive power that exceeds a random coin-flip over a 3-day holding period.
+Determine if machine learning models can identify "high-conviction" regimes for a primary momentum signal. We use **Meta-Labeling** to filter out noise and improve the precision of short-term market entries.
 
 ### Architecture
+- **Layer 1 (Signal)**: Primary 5-day momentum signal.
+- **Layer 2 (Filter)**: Binary XGBoost Classifier (Meta-Model).
 - **Assets:** Nifty 50, Gold (MCX), USD/INR
-- **Model:** XGBoost Classifier (per-asset)
-- **Baseline:** Monte Carlo simulation (1000 random strategies)
+- **Baseline:** Logistic Regression + Scaling
 - **Validation:** TimeSeriesSplit (5-fold, no look-ahead bias)
 
 ### Tech Stack
@@ -46,17 +47,18 @@ The pipeline is split into two distinct specialized notebooks:
 2. **Synthesis (`src/feature_engineering.ipynb`)**:
     - **Memory Persistence**: Application of **Fractional Differentiation** (orders $d \in [0.30, 0.45]$) to preserve 77-91% of historical memory while ensuring stationarity.
     - **Macro Indicators**: Integration of the **India VIX** (implied volatility) as a forward-looking fear gauge.
-    - **Labeling**: Generating the **Triple Barrier** target (-1, 0, +1) using per-asset volatility-adaptive thresholds ($k$) and a 3-day window ($T$).
+    - **Labeling**: Generating the **Triple Barrier** target (-1, 0, +1) using per-asset volatility-adaptive thresholds ($k$) and a **5-day window** ($T$).
+    - **Meta-Labeling**: Synthesizing the `Meta_Label` (1 if Signal = Win, 0 if Signal = Fail/Timeout).
     - **Inter-Asset Dynamics**: Creation of cross-asset features (RS, Risk-Off, FX Sensitivity).
 
-**Total Features:** 19 (Main) + 7 (Regime and Cross-Asset).
+**Total Features:** 13 (Optimized) + 7 (Macro and Cross-Asset).
 
-### Label Definition
+### Meta-Label Definition
 ```
-Forward_Return = (Close[T+3] - Open[T+1]) / Open[T+1]
-Label = 1 if Forward_Return > 0, else 0
+Signal = 1 if Ret_5d > 0 else -1
+Meta_Label = 1 if (Signal == TB_Label) else 0
 ```
-- Decision at T Close, Entry at T+1 Open, Exit at T+3 Close (3-day holding period)
+- **TB_Label**: Result of the Triple Barrier over 5 sessions.
 
 ### Train/Test Split
 - **Buffer Data:** 2012–2013 (Used for rolling indicators and Fractional Differentiation lookbacks)
@@ -239,10 +241,15 @@ Traditional binary labeling (Up/Down) forces a model to guess direction regardle
 Entry: $P_0$ (at Open of $T+1$)  
 Upper Barrier: $P_0 \cdot (1 + k\sigma)$  
 Lower Barrier: $P_0 \cdot (1 - k\sigma)$  
-Vertical Barrier: $T=3$ sessions  
+Vertical Barrier: Time $T$ expires → Label = 0 (inconclusive / timeout)
 
-#### Rationale for $k=1.5\sigma$
-While a $2.0\sigma$ barrier is mathematically "pure," it only triggers in 5% of cases. By using $1.5\sigma$, we capture meaningful "outperformance" while maintaining enough samples for the XGBoost model to find generalized patterns.
+#### Rationale for $T=5$
+Empirically, $T=3$ proved too noisy for stable directional learning. By extending to $T=5$, the **Return Spread** between profit and loss labels increases significantly across all three assets, providing a cleaner signal for the Meta-Model to filter.
+
+#### Asset-Specific Scalings ($k$)
+- **NIFTY**: $k=1.5$
+- **GOLD**: $k=1.75$ (Higher volatility tail)
+- **USDINR**: $k=1.5$
 
 ---
 
@@ -292,14 +299,14 @@ The following features are synthesized in `src/feature_eng.py` and `src/feature_
 
 ---
 
-## 11. Project Evolution: Phase 3 Cross-Asset Synthesis ✅ *(Completed)*
+## 11. Project Evolution: Phase 6 Meta-Filtering ✅ *(In Progress)*
 
-Phase 3 focused on transforming the single-asset technical indicator approach into a macro-aware, multi-asset framework. The following milestones have been integrated into the current architecture:
+The project has pivoted from raw directional prediction to a sophisticated **Meta-Labeling** architecture.
 
-- **Asset Alignment & Temporal Integrity**: Resolved theMCX vs. NSE holiday mismatches, anchoring the dataset on common trading days (3,446 rows) to ensure cross-asset features are synchronized.
-- **Advanced Memory Retention**: Finalized manually selected $d$-values for Fractional Differentiation (0.30–0.50), successfully balancing stationarity with historical signal persistence.
-- **Cross-Market Intelligence**: Implemented **Relative Strength (RS)**, **Risk-Off** binary flags, and **Equity-Stress** indicators to capture Inter-Market Analysis dynamics (e.g., Gold as a hedge for Nifty).
-- **Forward-Looking Volatility**: Integrated **India VIX (`^INDIAVIX`)** to replace backward-looking realized volatility, providing the model with a "fear gauge" signal.
+- **Baseline Established**: A Logistic Regression baseline proved that the relationship between technicals and "Momentum Quality" is non-linear.
+- **Nifty Benchmark**: The linear model fails to cross the 52% probability threshold on Nifty, establishing a "Zero-Recall" benchmark for XGBoost to beat.
+- **Feature Separation**: Identified that **Relative Strength vs Gold** is the strongest "Green Light" for Nifty momentum success.
+- **Forward-Looking Volatility**: Transitioned all models to utilize **India VIX** as the primary regime detector.
 
 ---
 
@@ -330,13 +337,14 @@ Transitioning from binary -1, 0, +1 labeling to a model that can predict the *sp
 |------|---------|
 | `src/fetch_data.py` | Automated historical data ingestion (yfinance) |
 | `src/data_cleaning.ipynb` | Join, align, and synchronize multi-asset timestamps |
-| `src/feature_engineering.ipynb` | Final synthesized dataset generation and Train/Test split |
-| `src/feature_eng.py` | Mathematical utility functions for technical indicators |
-| `src/triple_barrier.py` | Algorithm for forward-scanning volatility labeling |
-| `src/train_exposure.py` | XGBoost training logic with TimeSeriesSplit |
+| `src/feature_engineering.ipynb` | Final synthesized dataset generation and Meta-Labeling |
+| `src/feature_eng.py` | Technical indicator library (Polars-optimized) |
+| `src/tripple_barrier.py` | Algorithm for forward-scanning volatility labeling |
+| `src/train_trade_filter.py` | XGBoost Meta-Model training (GPU accelerated) |
+| `src/train_baseline.py` | Logistic Regression baseline model |
+| `src/feature_separation.py` | ROC AUC analysis of individual feature signal strength |
 | `data/processed/train/` | Cleaned 2014-2023 training shards |
 | `data/processed/test/` | Out-of-sample 2024-2025 evaluation sets |
-| `config.yaml` | Global feature lists, $d$-values, and modeling thresholds |
 
 ---
 
