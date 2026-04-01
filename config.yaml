@@ -1,32 +1,17 @@
 Exposure_Features:
-- Ret_1d
-- Ret_3d
 - Ret_5d
 - Ret_20d
 - Vol_5d
-- Vol_20d
 - Vol_Ratio
+- ATR_Pct
 - FD_Close
-- FD_Close_Lag1
 - MACD_Hist
-- RSI
 - ROC_10
-- Trend_Strength
 - Gap
 - BB_Pct
-- ATR_Pct
-- MA_Ratio
 - Price_vs_MA20
-- Close_Pos_Range
 - Intraday_Return
 - Range_Expansion
-- Gold_Nifty_RS_5d
-- Gold_Nifty_RS_20d
-- Usdinr_Ret_3d
-- Usdinr_Ret_5d
-- Usdinr_Vol_Ratio
-- Momentum_Align
-- Risk_Off
 Cross_Asset_Features:
   gold:
   - Nifty_Gold_RS_5d
@@ -59,16 +44,12 @@ Portfolio_Weights:
   nifty: 0.28
   usdinr: 0.4
 Regime_Features:
-- Vol_5d
+- Ret_5d
 - Vol_20d
-- Vol_Ratio
 - ATR_Pct
-- Range_Expansion
-- Intraday_Return
-- Gap
 Threshold: 0.6
 Triple_Barrier:
-  T: 3
-  k_gold: 1.75
+  T: 5
+  k_gold: 1.25
   k_nifty: 1.5
   k_usdinr: 1.5
