@@ -1,11 +1,11 @@
 # METR — Market Exposure Timing vs Randomness
 
 ## Overview & Ideology
-**Can a machine learning model trained purely on historical price/volume data—without any live sentiment, news, macro indicators, or order flow—actually beat random market entries in the long term?**
+**Can a machine learning model trained purely on historical price, volume, and publicly available implied volatility data — without any live sentiment, news, macro indicators, or order flow — actually beat random market entries in the long term?**
 
-**METR** is a controlled empirical study designed to isolate true statistical predictive edge from market noise and lucky streaks. By restricting the models to exclusively mathematical market microstructure (momentum, volatility regimes, mean reversion) and forcing a fixed 3-day holding period, the project evaluates whether standard assets (Equities, Commodities, FX) possess predictable short-term inefficiencies.
+**METR**  is a controlled empirical study designed to isolate true statistical predictive edge from market noise and lucky streaks. By restricting models exclusively to mathematical market microstructure — momentum, volatility regimes both realized and implied, and mean reversion patterns — and validating against 1,000 Monte Carlo simulations of random trade selection, the project empirically tests whether three uncorrelated Indian asset classes (Equities, Commodities, FX) possess predictable short-term inefficiencies exploitable without privileged data access.
 
-> **Current Status:** Phase 7 — **Meta-Training & Filter Overhaul**. We have synthesized **Interaction Features** (ATR_MACD, RSI_Trend) and integrated **India VIX** as a forward-looking regime filter. The current focus is on overhauling the XGBoost Meta-Model for Binary Meta-Labeling.
+> **Current Status:** Phase 9 — **Regime Conditioning (GaussianHMM)**. We have successfully completed the **Phase 8 SHAP Audit**, isolating a **50.4% Win Rate** milestone on Gold. The current focus is on injecting Hidden Markov Model (HMM) regimes into the meta-filters to break the precision barriers in Equities.
 
 ## Core Experiments
 1. **Meta-Filter vs. Baseline (The Edge Test):** Evaluating our XGBoost "Trade Filter" against the Interaction-Enhanced Logistic Regression baseline. We measure "Meta-Precision" (Win Rate) to see if the model can successfully identify which momentum signals are trustworthy.
