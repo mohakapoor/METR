@@ -1,0 +1,36 @@
+
+============================================================
+  ASSET: NIFTY (GaussianHMM)
+============================================================
+   Fitting HMM on 2436 sample points...
+
+   --- State Interpretation Matrix ---
+   State 0: TRENDING (Normal)    | Vol_20d=0.0080 | Ret_5d=0.0041 | Dist=44.5%
+   State 1: TRENDING (Normal)    | Vol_20d=0.0080 | Ret_5d=0.0037 | Dist=44.5%
+   State 2: CRISIS (High Vol)    | Vol_20d=0.0178 | Ret_5d=-0.0062 | Dist=10.9%
+
+   [DONE] Saved HMM Model  -> models/regime/nifty_hmm.joblib
+
+============================================================
+  ASSET: GOLD (GaussianHMM)
+============================================================
+   Fitting HMM on 2436 sample points...
+
+   --- State Interpretation Matrix ---
+   State 0: TRENDING (Normal)    | Vol_20d=0.0068 | Ret_5d=0.0021 | Dist=31.9%
+   State 1: TRENDING (Normal)    | Vol_20d=0.0068 | Ret_5d=0.0021 | Dist=31.9%
+   State 2: TRENDING (Normal)    | Vol_20d=0.0080 | Ret_5d=0.0005 | Dist=36.3%
+
+   [DONE] Saved HMM Model  -> models/regime/gold_hmm.joblib
+
+============================================================
+  ASSET: USDINR (GaussianHMM)
+============================================================
+   Fitting HMM on 2436 sample points...
+
+   --- State Interpretation Matrix ---
+   State 0: TRENDING (Normal)    | Vol_20d=0.0035 | Ret_5d=0.0008 | Dist=44.5%
+   State 1: TRENDING (Normal)    | Vol_20d=0.0035 | Ret_5d=0.0007 | Dist=44.6%
+   State 2: CRISIS (High Vol)    | Vol_20d=0.0057 | Ret_5d=-0.0001 | Dist=10.9%
+
+   [DONE] Saved HMM Model  -> models/regime/usdinr_hmm.joblib
