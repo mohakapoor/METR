@@ -46,6 +46,11 @@ Cross_Asset_Features:
   - Nifty_Vol_Ratio
   - Risk_Off
   - Equity_Stress
+  - Nifty_Vol_20d
+  - Gold_Vol_20d
+  - Nifty_Gold_RS_5d
+  - Cross_Vol_Ratio
+  - Usdinr_Stress_Filter
 Fractional_Differentiation:
   gold: 0.5
   nifty: 0.45
