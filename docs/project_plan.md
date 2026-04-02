@@ -57,20 +57,21 @@ To empirically test this ideology, the project is structured around two core exp
 - [x] Integrate "Exhaustion Hypothesis" insights (depth/regularization).
 - [x] Achieve statistically significant Alpha boost in **Gold** (WR 50%+) and **Nifty** (AUC 0.56+).
 
-### Phase 8: Model Interpretation & Feature Audit 🚀 *(In Progress)*
-- [ ] **SHAP/Gain Analysis (Gold)**: Isolate whether VIX or Interaction terms drive the 50% Win Rate.
-- [x] **VIX Consistency Audit**: Confirmed via `nifty_train.parquet` (all 4 macro features present).
-- [ ] **RFE (Nifty)**: Systematic feature pruning to reach/confirm the 48% Win Rate barrier.
+### Phase 8: Model Interpretation & Macro-Stabilization ✅ *(Completed)*
+- [x] **SHAP/Gain Analysis**: Isolated `Vol Efficiency` and `VIX_Shock` as the primary Alpha drivers for Gold.
+- [x] **Macro-Injection (Phase 8.6)**: Successfully bridged the "Interaction Wall" in USDINR by injecting equity-stress filters (+10.7% edge).
+- [x] **Stabilization (Phase 8.7)**: Reached an **Institutional-Grade Alpha Peak** (+10.74% edge) while reducing the overfitting gap to 0.19.
+- [x] **Final Alpha Audit (Phase 8.8)**: Mathematically confirmed the separation power of the production features.
 
-### Phase 9: Regime Conditioning (GaussianHMM)
-- [ ] Fit 3-state GaussianHMM (features: Vol_20d, Ret_5d, ATR_Pct) on training data.
-- [ ] Interpret and label hidden states by mean feature values.
-- [ ] Add `HMM_Regime` as a feature to Gold/Nifty meta-filters; measure incremental lift.
+### Phase 9: Regime Conditioning (GaussianHMM) ✅ *(Rejected)*
+- [x] **Experimentation**: Fitted 3-state HMM to identify "Crisis" regimes.
+- [x] **Verdict**: HMM rejected for inclusion; its "Crisis" detection was redundant and less precise than the existing **VIX_Shock** and **Nifty_Vol** indicators.
 
-### Phase 10: Backtest & Economics
-- [ ] Compute per-trade returns with **0.1% round-trip transaction costs**.
-- [ ] Build Equity Curves and Compute Sharpe, Max Drawdown, and Avg Hold Period.
-- [ ] Optimize Thresholds on training data using **Sharpe** as the primary target.
+### Phase 10: Backtest & Economics 🚀 *(In Progress)*
+- [x] **Cost Specification**: Integrated **10 bps (0.1%)** round-trip transaction costs as the production floor.
+- [/] **Equity Curve Engine**: Developing `src/backtest_engine.py` to calculate P&L from the `TB_Return` column.
+- [ ] **Risk Analytics**: Compute Sharpe, Max Drawdown, and Avg Hold Period for the "Golden Build."
+- [ ] **Optimal Thresholding**: Identify the exact Recall/Sharpe trade-off for deployment.
 
 ### Phase 11: Statistical Validation (The Final Test)
 - [ ] **Monte Carlo Baseline A**: Pure random trade selection (1,000 runs).
