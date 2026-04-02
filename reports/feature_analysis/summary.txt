@@ -1,0 +1,51 @@
+
+ASSET: NIFTY
+------------------------------
+Top 5 by Gain (Importance):
+  - Vol_Ratio           : 6.29
+  - Ret_5d              : 5.74
+  - Vol Efficiency      : 5.55
+  - VIX_Momentum_Efficiency: 5.50
+  - VIX_ATR_Ratio       : 5.30
+
+Top 5 by Correlation ( r ):
+  - Price_vs_MA20       : -0.1821
+  - Gold_Nifty_RS_20d   : 0.1763
+  - FD_Close            : -0.1663
+  - RS_Momentum_Decoupling: 0.1585
+  - ROC_10              : -0.1577
+
+
+ASSET: GOLD
+------------------------------
+Top 5 by Gain (Importance):
+  - Ret_5d              : 23.09
+  - Vol Efficiency      : 19.63
+  - VIX_Momentum_Efficiency: 13.30
+  - FD_Close            : 7.92
+  - RSI                 : 7.72
+
+Top 5 by Correlation ( r ):
+  - Usdinr_Stress_Filter: 0.1431
+  - Ret_5d              : -0.1318
+  - Vol Efficiency      : -0.1268
+  - VIX_Momentum_Efficiency: -0.1124
+  - RSI                 : -0.1087
+
+
+ASSET: USDINR
+------------------------------
+Top 5 by Gain (Importance):
+  - Vol Efficiency      : 6.45
+  - BB_Pct              : 5.54
+  - VIX_Momentum_Efficiency: 5.13
+  - ROC_10              : 5.10
+  - Vol_Ratio           : 4.98
+
+Top 5 by Correlation ( r ):
+  - Nifty_Vol_20d       : -0.1332
+  - Nifty_Vol_Ratio     : 0.1217
+  - Nifty_Gold_RS_5d    : 0.0938
+  - Vol Efficiency      : 0.0910
+  - Gold_Ret_5d         : -0.0707
+
