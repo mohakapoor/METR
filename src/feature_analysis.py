@@ -53,7 +53,15 @@ for asset in ASSETS:
     print(f"{'='*60}")
 
     # 1. Feature Importance (Gain)
-    scores = model.get_booster().get_score(importance_type="gain")
+    # Handle CalibratedClassifierCV wrapper vs raw XGBoost
+    if hasattr(model, "calibrated_classifiers_"):
+        # Extract from the first estimator in the calibration ensemble
+        # (Assuming cv='prefit' so they are identical)
+        actual_booster = model.calibrated_classifiers_[0].estimator.get_booster()
+    else:
+        actual_booster = model.get_booster()
+
+    scores = actual_booster.get_score(importance_type="gain")
     feat_order = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     feat_names = [f[0] for f in feat_order]
     feat_vals  = [f[1] for f in feat_order]
@@ -106,5 +114,18 @@ for asset in ASSETS:
     plt.savefig(out, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"\n  ✅ Saved → {out}")
+
+    # Append to summary file
+    summary_path = f"{REPORT_DIR}/summary.txt"
+    with open(summary_path, "a") as sf:
+        sf.write(f"\nASSET: {asset.upper()}\n")
+        sf.write(f"{'-'*30}\n")
+        sf.write("Top 5 by Gain (Importance):\n")
+        for name, val in feat_order[:5]:
+            sf.write(f"  - {name:20s}: {val:.2f}\n")
+        sf.write("\nTop 5 by Correlation ( r ):\n")
+        for name, val in sorted_corrs[:5]:
+            sf.write(f"  - {name:20s}: {val:.4f}\n")
+        sf.write("\n")
 
 print("\nPhase 8 analysis complete.")
