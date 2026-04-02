@@ -3,15 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import yaml
 
-# CONFIG_PATH = "../config.yaml"
-# with open(CONFIG_PATH, "r") as f:
-#     config = yaml.safe_load(f)
-# FEATURES = config["Exposure_Features"]
-
 def generate_barriers(df, k, T):
     n = len(df)
-    labels = [None] * n  # Pad with None so length matches df exactly
-    returns = [None] * n # same
+    labels = [None] * n  
+    returns = [None] * n 
     
     opens = df['Open'].to_numpy()
     close_prices = df['Close'].to_numpy()
@@ -51,17 +46,15 @@ def generate_barriers(df, k, T):
     return labels, returns
 
 
-MAX_CLASS_PCT = 45.0  # hard filter: no single class above this
+MAX_CLASS_PCT = 45.0  # hard filter:
 
 
 def balance_score(pct_neg1, pct_0, pct_pos1):
-    """Sum of squared deviations from perfect 33.3%. Lower = more balanced."""
     ideal = 100.0 / 3
     return (pct_neg1 - ideal)**2 + (pct_0 - ideal)**2 + (pct_pos1 - ideal)**2
 
 
 def passes_filter(pct_neg1, pct_0, pct_pos1):
-    """True if no class exceeds MAX_CLASS_PCT."""
     return max(pct_neg1, pct_0, pct_pos1) <= MAX_CLASS_PCT
 
 
@@ -82,8 +75,6 @@ def evaluate_triple_barrier_grid(assets):
                 for t in T_VALUES:
                     
                     labels, returns = generate_barriers(df, k=k, T=t)
-                    
-                    # Compute aggregations skipping None values at the end
                     res_df = pl.DataFrame({"TB_Label": labels, "return": returns}).drop_nulls("TB_Label")
                     
                     counts = (
@@ -100,7 +91,7 @@ def evaluate_triple_barrier_grid(assets):
                         (pl.col("count") / total * 100).round(1).alias("pct")
                     )
 
-                    # Extract percentages
+                  
                     pct_map = dict(zip(counts["TB_Label"].to_list(), counts["pct"].to_list()))
                     pct_neg1 = pct_map.get(-1, 0.0)
                     pct_0 = pct_map.get(0, 0.0)
