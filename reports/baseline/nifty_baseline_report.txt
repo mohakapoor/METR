@@ -1,6 +1,6 @@
 ASSET: NIFTY (Logistic Regression Baseline)
 ============================================================
-Best CV ROC AUC: 0.5400
+Best CV ROC AUC: 0.5401
 Best Params: {'logreg__C': 0.001, 'logreg__penalty': 'l2', 'logreg__solver': 'lbfgs'}
 Train AUC: 0.5784 | Test AUC: 0.5508
 

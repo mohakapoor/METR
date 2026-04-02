@@ -2,7 +2,7 @@ ASSET: GOLD (Logistic Regression Baseline)
 ============================================================
 Best CV ROC AUC: 0.5587
 Best Params: {'logreg__C': 0.001, 'logreg__penalty': 'l2', 'logreg__solver': 'lbfgs'}
-Train AUC: 0.5991 | Test AUC: 0.5744
+Train AUC: 0.5991 | Test AUC: 0.5745
 
 --- Metrics at Threshold: 0.5 ---
 Win Rate: 0.4545 | Trade Fraction: 0.1228
