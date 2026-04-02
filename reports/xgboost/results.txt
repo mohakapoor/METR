@@ -1,0 +1,46 @@
+
+============================================================
+  ASSET: NIFTY (Calibrated Meta-Filter Training)
+============================================================
+   Loaded explicit Train/Test files: nifty_train.parquet / nifty_test.parquet
+   Features: 30 available in dataset.
+
+   Train AUC: 0.6745 | Test AUC: 0.5737 | Gap: 0.1008
+   Baseline Win Rate: 0.3951 | Test AUPRC: 0.4348
+   --- Thresh 0.5: WR 0.4556 | Frac 0.5536 | Edge +6.06%
+   --- Thresh 0.52: WR 0.4612 | Frac 0.5469 | Edge +6.61%
+   --- Thresh 0.55: WR 0.4478 | Frac 0.4487 | Edge +5.27%
+   --- Thresh 0.58: WR 0.4510 | Frac 0.3415 | Edge +5.59%
+
+   [DONE] Model saved as nifty_xgb_meta.joblib
+
+============================================================
+  ASSET: GOLD (Calibrated Meta-Filter Training)
+============================================================
+   Loaded explicit Train/Test files: gold_train.parquet / gold_test.parquet
+   Features: 29 available in dataset.
+
+
+   Train AUC: 0.6741 | Test AUC: 0.5868 | Gap: 0.0872
+   Baseline Win Rate: 0.4085 | Test AUPRC: 0.4678
+   --- Thresh 0.5: WR 0.5143 | Frac 0.3125 | Edge +10.58%
+   --- Thresh 0.52: WR 0.5234 | Frac 0.2857 | Edge +11.50%
+   --- Thresh 0.55: WR 0.5159 | Frac 0.2812 | Edge +10.74%
+   --- Thresh 0.58: WR 0.5159 | Frac 0.2812 | Edge +10.74%
+
+   [DONE] Model saved as gold_xgb_meta.joblib
+
+============================================================
+  ASSET: USDINR (Calibrated Meta-Filter Training)
+============================================================
+   Loaded explicit Train/Test files: usdinr_train.parquet / usdinr_test.parquet
+   Features: 31 available in dataset.
+
+   Train AUC: 0.7278 | Test AUC: 0.5336 | Gap: 0.1941
+   Baseline Win Rate: 0.3973 | Test AUPRC: 0.4345
+   --- Thresh 0.5: WR 0.4437 | Frac 0.3170 | Edge +4.63%
+   --- Thresh 0.52: WR 0.4437 | Frac 0.3170 | Edge +4.63%
+   --- Thresh 0.55: WR 0.4828 | Frac 0.2589 | Edge +8.54%
+   --- Thresh 0.58: WR 0.5047 | Frac 0.2388 | Edge +10.74%
+
+   [DONE] Model saved as usdinr_xgb_meta.joblib
