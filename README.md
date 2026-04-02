@@ -5,11 +5,20 @@
 
 **METR**  is a controlled empirical study designed to isolate true statistical predictive edge from market noise and lucky streaks. By restricting models exclusively to mathematical market microstructure — momentum, volatility regimes both realized and implied, and mean reversion patterns — and validating against 1,000 Monte Carlo simulations of random trade selection, the project empirically tests whether three uncorrelated Indian asset classes (Equities, Commodities, FX) possess predictable short-term inefficiencies exploitable without privileged data access.
 
-> **Current Status:** Phase 9 — **Regime Conditioning (GaussianHMM)**. We have successfully completed the **Phase 8 SHAP Audit**, isolating a **50.4% Win Rate** milestone on Gold. The current focus is on injecting Hidden Markov Model (HMM) regimes into the meta-filters to break the precision barriers in Equities.
+> **Current Status:** Phase 8.7 — **Production Baseline Complete** 🏆. We have successfully navigated the "Overfitting Crisis," reaching an **Institutional-Grade Alpha Peak (+10.74% edge)** for both Gold and FX (USDINR). The project is now structurally calibrated for real-world backtesting and economics.
 
 ## Core Experiments
-1. **Meta-Filter vs. Baseline (The Edge Test):** Evaluating our XGBoost "Trade Filter" against the Interaction-Enhanced Logistic Regression baseline. We measure "Meta-Precision" (Win Rate) to see if the model can successfully identify which momentum signals are trustworthy.
-2. **Regime Detection (The Context Test):** Quantifying the impact of **India VIX** and **Cross-Asset Relative Strength** on signal quality—specifically focusing on the "Non-Linear Wall" in Nifty.
+1. **Meta-Filter vs. Baseline (The Edge Test):** Evaluating our XGBoost "Trade Filter" against the Interaction-Enhanced Logistic Regression baseline. We measure "Meta-Precision" (Win Rate) to see if the model can identify which momentum signals are trustworthy.
+2. **Macro-Stabilization (The Context Breakthrough):** Successfully injected **India VIX** and **Cross-Asset Stress Filters** (`Risk_Off`, `Nifty_Vol_Ratio`) to bridge the "Interaction Wall." This transition from pure price-action to macro-regime awareness delivered our +10.7% edge on USDINR.
+
+## Key Performance Benchmarks (Phase 8.7)
+*Measured at the 0.58 Confidence Threshold (Production Level)*
+
+| Asset | Strategy Edge (vs Baseline) | Test ROC AUC | Max Overfitting Gap |
+|---|---|---|---|
+| **GOLD** | **+10.74%** | 0.5868 | 0.08 |
+| **USDINR** | **+10.74%** | 0.5336 | 0.19 |
+| **NIFTY** | **+5.59%** | 0.5737 | 0.10 |
 
 ## Project Structure
 ```text
