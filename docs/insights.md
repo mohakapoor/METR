@@ -41,8 +41,25 @@ In Meta-Labeling, **Precision is the only metric that matters.**
 
 ---
 
-## 6. Future Watch-List
-As we move into Phase 7, keep an eye on these potential "Alpha" killers:
-1. **Feature Leakage**: Ensure `add_vix` and other joins are strictly using $T$ or $T-1$ data (current logic is safe).
-2. **Holiday Drift**: Even with alignment, the 18 Nifty-only days and 57 Gold-only days we dropped could still contain volatile gaps.
-3. **Regime Shift (2024–2025)**: The test set covers the most recent bull market. If the model fails here, it's likely over-regularized for calmer 2018–2021 regimes.
+---
+
+## 7. Phase 8 Post-Audit Blueprints (Portfolio Alpha)
+
+The SHAP/Gain audit has revealed the specific non-linear "Blueprints" that allow our meta-filters to outperform random chance.
+
+### A. The Gold Blueprint: "The Microstructure Chaos Filter"
+*   **Discovery**: **`Vol Efficiency`** is the #1 signal (SHAP 0.26).
+*   **The Logic**: Gold momentum is only reliable when it is "messy" or "inefficient." When the price moves in a clean, vertical line, the model identifies it as an **Exhaustion Point** and filters the signal.
+
+### B. The Nifty Blueprint: "The Memory-Extension Filter"
+*   **Discovery**: **`FD_Close`** (Long-Memory) is the master anchor.
+*   **The Logic**: Nifty momentum fails when the absolute extension from the mean (**`Price_vs_MA20`**) is too high. The model uses the fractionally differentiated price to find stationary points where momentum is likely to mean-revert rather than trend.
+
+### C. The USDINR Blueprint: "The VIX Proxy"
+*   **Discovery**: The model is 38% correlated with **VIX Intensity**.
+*   **The Logic**: USDINR momentum is almost entirely a "Beta" play on Global Stress. If VIX is spiking, local currency technicals are secondary to global macro-flow.
+
+---
+
+## Final Milestone: Phase 9 Starting Position
+With these Blueprints identified, the next step is **GaussianHMM Regime Conditioning**. Instead of letting the trees "guess" if the trend is efficient or extended, the HMM will explicitly tag the current state (Bull Trend, Bear Trend, or Choppy), allowing the meta-filters to calibrate their confidence dynamically.

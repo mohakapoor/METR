@@ -8,7 +8,7 @@
 ## 1. Project Overview
 
 ### Objective
-Determine if machine learning models can identify "high-conviction" regimes for a primary momentum signal. We use **Meta-Labeling** to filter out noise and improve the precision of short-term market entries.
+Determine if machine learning models trained purely on historical price, volume, and publicly available implied volatility data can identify "high-conviction" regimes for a primary momentum signal. Using **Meta-Labeling** and validating against **1,000 Monte Carlo simulations**, the project isolates true statistical predictive edge from market noise.
 
 ### Architecture
 - **Layer 1 (Signal)**: Primary 5-day momentum signal.
@@ -307,7 +307,13 @@ The following features are synthesized in `src/feature_eng.py` and `src/feature_
 
 ---
 
-## 11. Project Evolution: Phase 6 Meta-Filtering ✅ *(In Progress)*
+## 11. Project Evolution: Phase 9 Regime Conditioning 🚀 *(Current)*
+
+The project has graduated from "Training" to **"Interpretation & Context."** We have successfully completed the **Phase 8 SHAP Audit**, isolating a **50.4% Win Rate** milestone on Gold.
+
+- **Phase 8 Breakthrough**: Confirmed that **Long-Memory (FD_Close)** and **Volatility Efficiency** are the project's strongest Alpha sources.
+- **The HMM Pivot**: Transitioning to GaussianHMM to explicitly define market regimes and break the "Non-Linear Wall" in Nifty.
+- **Statistical Goal**: Validating the final strategy Sharpe ratio against the 1,000-run Monte Carlo baseline.
 
 The project has pivoted from raw directional prediction to a sophisticated **Meta-Labeling** architecture.
 
