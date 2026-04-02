@@ -29,7 +29,7 @@ THRESHOLD_LIST = [0.50, 0.52, 0.55, 0.58]
 ASSETS = ["nifty", "gold", "usdinr"]
 
 # Ensure output directories exist
-os.makedirs("models", exist_ok=True)
+os.makedirs("models/meta", exist_ok=True)
 os.makedirs("reports/meta_filter", exist_ok=True)
 
 # Hyperparameter Space
@@ -131,10 +131,10 @@ for asset in ASSETS:
     with open(filename, "w") as f:
         f.write("\n".join(report_lines))
     
-    joblib.dump(best_model, f"models/{asset}_xgb_meta.joblib")
+    joblib.dump(best_model, f"models/meta/{asset}_xgb_meta.joblib")
     
     print(f"   AUC Stats: AUC={auc_score:.4f} | AUPRC={ap_score:.4f}")
-    print(f"   ✅ Saved Model  → models/{asset}_xgb_meta.joblib")
+    print(f"   ✅ Saved Model  → models/meta/{asset}_xgb_meta.joblib")
     print(f"   ✅ Saved Report → {filename}")
     
 print("\nMeta-Training Complete.")

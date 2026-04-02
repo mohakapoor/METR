@@ -31,7 +31,7 @@ os.makedirs(REPORT_DIR, exist_ok=True)
 
 # Per-Asset Analysis
 for asset in ASSETS:
-    model_path = f"models/{asset}_xgb_meta.joblib"
+    model_path = f"models/meta/{asset}_xgb_meta.joblib"
     if not os.path.exists(model_path):
         print(f"[SKIP] {asset} — meta-model not found at {model_path}")
         continue

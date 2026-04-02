@@ -146,7 +146,7 @@ for asset in ASSETS:
             print(f"\n   {t_report}{class_rep}")
 
     # ── Save Model ────────────────────────────────────────────────────────────
-    save_path = f"models/{asset}_baseline.joblib"
+    save_path = f"models/baseline/{asset}_baseline.joblib"
     joblib.dump(best_model, save_path)
     print(f"   ✅ Saved Model  → {save_path}")
     print(f"   ✅ Saved Report → {report_path}")
