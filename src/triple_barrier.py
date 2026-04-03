@@ -24,22 +24,25 @@ def generate_barriers(df, k, T):
         p_upper = p0*(1+k*sigma)
         p_lower = p0*(1-k*sigma)
         
-        if i+1 < n and opens[i+1] != 0:
-            returns[i] = (close_prices[i+T] - opens[i+1]) / opens[i+1]
-            
         for j in range(1, T+1):
             if i+j >= n: # Safety bounds check
                 break
                 
             if (high[i+j] >= p_upper) and (low[i+j] <= p_lower):
-                label = 0 # marking as neutral
+                label = 0 # Double-hit ambiguity
                 break
             elif (high[i+j] >= p_upper):
-                label = 1 # profit
+                label = 1 # Profit
+                returns[i] = k * sigma
                 break
             elif (low[i+j] <= p_lower):
-                label = -1 # stop loss
+                label = -1 # Stop
+                returns[i] = -k * sigma
                 break
+        
+        # Catch-all for Neutral (0) or Timeout (0) exits
+        if returns[i] is None:
+            returns[i] = (close_prices[i+T] - opens[i+1]) / opens[i+1]
                 
         labels[i] = label
         
