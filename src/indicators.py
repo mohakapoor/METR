@@ -71,6 +71,7 @@ def generate_features(asset, k, d, T=5):
     asset = asset.with_columns([
         pl.Series("FD_Close", fd),
         pl.Series("TB_Label", labels),
+        pl.Series("TB_Return", returns),
     ])
     q = (
         asset.lazy()
