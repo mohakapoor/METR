@@ -8,24 +8,23 @@
 ## 1. Project Overview
 
 ### Objective
-Determine if machine learning models trained purely on historical price, volume, and publicly available implied volatility data can identify "high-conviction" regimes for a primary momentum signal. Using **Meta-Labeling** and validating against **1,000 Monte Carlo simulations**, I isolate true statistical predictive edge from market noise.
+Determine if machine learning models trained on price, volume, and implied volatility (VIX) can identify "high-conviction" regimes for a primary momentum signal. Using **Meta-Labeling** and validating against **10,000 Monte Carlo simulations**, I isolate true statistical predictive edge from market noise.
 
-### Architecture
-- **Layer 1 (Signal)**: Primary 5-day momentum signal (Volatility-Normalized).
-- **Layer 2 (Filter)**: Symmetric Binary XGBoost Classifier (Meta-Filter).
-- **Architecture**: Direction-Aware P&L tracking (`Directional_Return`).
-- **Assets:** Nifty 50, Gold (MCX). (USD/INR Pruned).
-- **Baseline:** Logistic Regression (Symmetric Audit).
+### Architecture (The Two-Layer Logic)
+- **Layer 1 (The Trigger)**: Primary 5-day momentum signal generated in `src/indicators.py` (Volatility-Normalized).
+- **Layer 2 (The Vet)**: Symmetric Binary XGBoost Classifier (`src/train_trade_filter.py`) that audits the trigger. It only grants "permission" to trade if the macro regime is stable.
+- **Audit Layer**: Hypothesis testing via `src/monte_carlo_audit.py` (Skill vs. Luck).
+- **Assets:** Nifty 50, Gold (Goldbees.np), USD/INR.
 - **Validation:** TimeSeriesSplit (5-fold) + Signal-Conditional Masking ($Signal \neq 0$).
 
-### Tech Stack
-| Component | Tool |
-|-----------|------|
-| Data Processing | Polars (lazy execution) |
-| Modeling | XGBoost + Scikit-Learn |
-| Configuration | `config.yaml` (feature lists, splits, thresholds) |
-| Data Source | `yfinance` |
-| Evaluation | Custom scripts (`evaluate_model.py`, `benchmark_random.py`, `feature_analysis.py`) |
+### Tech Stack & Standards
+| Component | Engine | Standard |
+|-----------|--------|----------|
+| **Data** | Polars | Lazy-execution, zero-copy joins |
+| **Model** | XGBoost | Symmetric Binary Classification |
+| **Labeling** | Triple Barrier | Volatility-adaptive (Profit/Loss/Time-out) |
+| **Memory** | FracDiff | Fractional memory preservation ($d=0.45$) |
+| **Metrics** | Calmar / Sharpe | 5-bps friction-adjusted net returns |
 
 ---
 
@@ -41,20 +40,17 @@ Targeting two distinct specialized notebooks:
 
 1. **Alignment (`src/data_cleaning.ipynb`)**:
     - **Asset Joining**: Programmatic merging of Nifty, Gold, USD/INR, and VIX into a unified timeframe.
-    - **Holiday Synchronization**: Stabilizing the dataset against non-overlapping market holidays (e.g., MCX vs. NSE).
-    - **Lookback Buffer**: Anchoring the training dataset at 2014-01-01 while preserving 2012-2013 for feature warm-up.
-    - **Date Intersection**: Ensuring all cross-asset features are calculated on common trading days (3,446 days total).
+- **Holiday Synchronization**: Stabilizing the dataset against non-overlapping market holidays (e.g., MCX vs. NSE).
+- **Date Intersection**: Ensuring all cross-asset features are calculated on common trading days (3,440+ days total).
+- **Lookback Buffer**: Anchoring the training dataset at 2014-01-01 while preserving 2012-2013 for feature warm-up.
 
-2. **Synthesis (`src/feature_engineering.ipynb`)**:
-    - **Memory Persistence**: Application of **Fractional Differentiation** (orders $d \in [0.30, 0.45]$) to preserve 77-91% of historical memory while ensuring stationarity.
-    - **Macro Indicators**: Integration of the **India VIX** (implied volatility) as a forward-looking fear gauge.
-    - **Labeling**: Generating the **Triple Barrier target** (-1, 0, +1) using per-asset volatility-adaptive thresholds ($k$) and a **5-day window** ($T$).
-    - **Symmetric Meta-Labeling**: Applying side-aware directionality where Meta_Label = 1 if (TB_Return * Signal) > 0.
-    - **Inter-Asset Dynamics**: Creation of cross-asset features (RS, Risk-Off, FX Sensitivity).
+### 2.2 Synthesis & Predictive Logic (`src/feature_engineering.ipynb`)
+- **Memory Persistence**: Application of **Fractional Differentiation** (`src/frac_diff.py`) to preserve ~80% of historical memory while ensuring statistical stationarity.
+- **The Labeling Engine**: Generating the **Triple Barrier target** using per-asset volatility-adaptive thresholds ($k$) and a **5-day window** ($T$).
+- **Symmetric Side-Accounting**: Crediting P&L via `Return * Signal` to correctly mark high-conviction Short wins as "Wins" (Meta_Label = 1).
+- **Macro Interaction**: Creation of the `Usdinr_Stress_Filter` and cross-asset Relative Strength features that bridge the gap between price-noise and actionable strategy edge.
 
-**Total Features:** 13 (Base) + 12 (Core Interaction) + 5 (Macro/VIX).
-
-
+**Total Feature Scope:** 13 (Technical) + 12 (Core Interaction) + 5 (Macro/VIX).
 
 ### Train/Test Split
 - **Buffer Data:** 2012–2013 (Used for rolling indicators and Fractional Differentiation lookbacks)
@@ -163,7 +159,7 @@ n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
 ## 4. Benchmark Results (Model vs Random)
 
 ### Monte Carlo Simulation
-- **Method:** 1000 random strategies, each selecting the same number of trades as the model but on random dates
+- **Method:** 10,000 random strategies, each selecting the same number of trades as the model but on random dates
 - **Return Calculation:** 3-day compound returns reconstructed from `Ret_1d`
 
 **Results (Model v1):**
@@ -181,9 +177,9 @@ n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
 
 ---
 
-## 5. Feature Importance Analysis (Per-Asset Audit)
+## 5. Feature Importance Analysis
 
-The introduction of **Macro-Interactors** has revealed that alpha drivers are highly asset-specific. Below is my forensic breakdown of the Top 3 drivers for each production engine.
+The introduction of **Macro-Interactors** has revealed that predictive drivers are highly asset-specific. Below is my forensic breakdown of the Top 3 drivers for each production engine.
 
 ### 5.1 Nifty 50 (Equities)
 *The Nifty engine is primarily driven by Relative Strength and Volatility regimes.*
@@ -259,7 +255,7 @@ Traditional labeling ignores the *Side* of the trade. **METR** uses a direction-
 Directional_Return = TB_Return * Signal
 Meta_Label = 1 if Directional_Return > 0 else 0
 ```
-This ensures that hitting a lower barrier while **Short** (-1) is correctly recorded as a "Win" (+kσ), solving the "Short Alpha Blindness" observed in early research stages.
+This ensures that hitting a lower barrier while **Short** (-1) is correctly recorded as a "Win" (+kσ), solving the "Short-Side Blindness" observed in early research stages.
 
 ### 8.2 Signal Conditioning (Noise Suppression)
 To isolate "Trade Entry Skill" from "Market Drift," all training and evaluation is strictly filtered:
@@ -303,20 +299,19 @@ This study uses `src/frac_diff.py` with a threshold of **$10^{-4}$** to balance 
 
 ## 10. Feature Dictionary (In-Depth)
 
-The following features are synthesized in `src/feature_eng.py` and `src/feature_engineering.ipynb`:
+The following features are synthesized in `src/indicators.py` and `src/feature_engineering.ipynb`:
 
 ### 10.1 Momentum & Price Action
-- **`Ret_1d, Ret_3d, Ret_5d, Ret_20d`**: Standard log-returns for capturing multi-timeframe momentum trends.
-- **`Intraday_Return`**: `(Close - Open) / Open`. Measures within-session conviction; often identifies institutional accumulation during choppy sessions.
-- **`Gap`**: `(Open - Prev_Close) / Prev_Close`. Captures overnight sentiment shifts and sensitivity to global market moves.
-- **`Close_Pos_Range`**: `(Close - Low) / (High - Low)`. Pinpoints "pin-bars" and price rejection at extremes. Values >0.8 indicate bullish rejection of low prices.
-- **`Range_Expansion`**: `(High - Low) / (Prev_High - Prev_Low)`. A quick-response volatility spike indicator.
+- **`Ret_1d, Ret_5d`**: Standard log-returns for capturing momentum trends.
+- **`Intraday_Return`**: Session conviction indicator.
+- **`Gap`**: Overnight sentiment shifts.
+- **`Close_Pos_Range`**: Price rejection signature at extremes.
+- **`Range_Expansion`**: Rate of volatility expansion.
 
 ### 10.2 Volatility & Regime Detection
-- **`Vol_Ratio`**: `Vol_5d / Vol_20d`. Detects when short-term volatility is expanding relative to the monthly baseline.
-- **`Vol Efficiency`**: `Ret_5d / Vol_20d`. A "Risk-Adjusted Momentum" signal identifying clean trends vs. choppy noise.
-- **`ATR_Pct`**: `Average True Range / Price`. Normalizes risk across time.
-- **`BB_Pct`**: Bollinger Band %B. Quantifies where price sits relative to its bands.
+- **`Vol Efficiency`**: `Ret_5d / Vol_20d`. Risk-adjusted momentum signature.
+- **`ATR_Pct`**: Normalized volatility across timeframes.
+- **`BB_Pct`**: Bollinger Band relative positioning.
 
 ### 10.3 Stationarity & Memory (FracDiff)
 - **`FD_Close`**: Fractionally Differentiated Close. Maintains historical memory while ensuring statistical stationarity.
@@ -342,7 +337,7 @@ The following features are synthesized in `src/feature_eng.py` and `src/feature_
 ## 11. Threshold Optimization 
 *(Dual-Friction Audit: 0 bps vs. 5 bps)*
 
-To bridge the gap between "Research Alpha" and "Production Alpha," I performed a forensic grid search across all thresholds $T \in [0.45, 0.60]$. The goal was to maximize **Net Calmar** (Alpha Efficiency) while monitoring **Friction Decay**.
+To bridge the gap between "Research Edge" and "Production Edge," we performed a forensic grid search across all thresholds $T$. The goal was to maximize **Net Calmar** (Strategy Efficiency) while monitoring **Friction Decay**.
 
 ### 11.1 The Friction Audit (Investability Lock)
 I tested the strategy against a standard institutional friction of **5 basis points (bps)** per round-trip trade.
@@ -524,3 +519,19 @@ Market exposure timing via meta-labeling is asset-class dependent, regime-sensit
 **METR RESEARCH STATUS: COMPLETE (GOLD PRODUCTION LOCK)**
 
 ---
+
+## 14. File Reference
+
+| File | Purpose |
+|------|---------|
+| `src/fetch_data.py` | Automated historical data ingestion (Source: Yahoo Finance) |
+| `src/data_cleaning.ipynb` | Multi-asset synchronization and alignment |
+| `src/feature_engineering.ipynb` | Refined feature synthesis and labeling |
+| `src/indicators.py` | Core technical indicator library (Polars-optimized) |
+| `src/frac_diff.py` | Fractional Differentiation logic for memory preservation |
+| `src/triple_barrier.py` | Volatility-adaptive labeling logic |
+| `src/train_trade_filter.py` | Layer 2 XGBoost Meta-Model training |
+| `src/backtest_engine.py` | Professional backtesting engine (MDD/Sharpe) |
+| `src/monte_carlo_audit.py` | 10,000-iteration "Skill vs. Luck" hypothesis tester |
+| `src/threshold_optimizer.py` | Net Calmar / Friction-decay search grid |
+| `src/shap_audit.py` | Local and Global explainability (SHAP) |
