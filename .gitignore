@@ -12,3 +12,8 @@ colab/
 
 #venv
 .venv/
+
+#docs
+docs/project_plan.md
+docs/insights.md
+docs/knowledge.md
