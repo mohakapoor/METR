@@ -52,16 +52,20 @@ def generate_features(asset, k, d, T=5):
             c.pct_change(n=20).alias("Ret_20d"),
         )
         .with_columns(
-            #Volatility
-            pl.when(pl.col("Ret_5d")>0)
+            #Volatility-Normalized Symmetric Signal
+            pl.when(pl.col("Ret_5d") > pl.col("Ret_1d").rolling_std(window_size=20))
             .then(1)
-            .otherwise(-1)
+            .when(pl.col("Ret_5d") < -pl.col("Ret_1d").rolling_std(window_size=20))
+            .then(-1)
+            .otherwise(0)
             .alias("Signal"),
             pl.col("Ret_1d").rolling_std(window_size=5).alias("Vol_5d"),
             pl.col("Ret_1d").rolling_std(window_size=20).alias("Vol_20d")
         )
         .collect()
     )
+
+
     # frac diff 
     close_np = asset["Close"].to_numpy()
     fd = frd.frac_diff(close_np,d,thresh=1e-4)
@@ -72,7 +76,9 @@ def generate_features(asset, k, d, T=5):
         pl.Series("FD_Close", fd),
         pl.Series("TB_Label", labels),
         pl.Series("TB_Return", returns),
-    ])
+    ]).with_columns(
+        (pl.col("TB_Return") * pl.col("Signal")).alias("Directional_Return")
+    )
     q = (
         asset.lazy()
         .with_columns(
