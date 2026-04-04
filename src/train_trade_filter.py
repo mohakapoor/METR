@@ -2,7 +2,7 @@
 Trade Filtering Model
 =====================
 - Only execute when Signal is there 
-- Calc AUCROC and AUC
+- Calc AUCROC and AUPRC (Average Precision)
 """
 
 import polars as pl
