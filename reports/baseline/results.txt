@@ -1,0 +1,21 @@
+
+============================================================
+  ASSET: NIFTY (Symmetric Baseline)
+============================================================
+   AUC Trace: Train=0.6122 | Test=0.5424 | Gap=0.0698
+   AP  Trace: Train=0.5014 | Test=0.3977 | Gap=0.1036
+   [DONE] Artifacts saved in models/baseline/
+
+============================================================
+  ASSET: GOLD (Symmetric Baseline)
+============================================================
+   AUC Trace: Train=0.6171 | Test=0.5813 | Gap=0.0358
+   AP  Trace: Train=0.5859 | Test=0.4543 | Gap=0.1316
+   [DONE] Artifacts saved in models/baseline/
+
+============================================================
+  ASSET: USDINR (Symmetric Baseline)
+============================================================
+   AUC Trace: Train=0.6106 | Test=0.4942 | Gap=0.1164
+   AP  Trace: Train=0.5068 | Test=0.4415 | Gap=0.0653
+   [DONE] Artifacts saved in models/baseline/
