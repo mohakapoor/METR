@@ -1,9 +1,9 @@
 """
-train_baseline.py — Logistic Regression Baseline for Meta-Labeling
+train_baseline.py — Institutional Symmetric Baseline for Meta-Labeling
 =================================================================
-- Goal: provide a linear baseline to compare against the XGBoost Meta-Filter.
-- Preprocessing: StandardScaler (Required for LogReg)
-- Target: Meta_Label (1 = Winning Signal, 0 = Losing/Noise Signal)
+- Goal: Provide a linear baseline to compare against the XGBoost Meta-Filter.
+- Standard: Signal-Conditional (+1/-1/0) & Symmetric Alpha.
+- Metrics: AUC and AUPRC (Average Precision).
 """
 
 import polars as pl
@@ -15,140 +15,119 @@ from sklearn.model_selection import TimeSeriesSplit, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.metrics import roc_auc_score, average_precision_score
 
-# ── Config ────────────────────────────────────────────────────────────────────
 CONFIG_PATH = "config.yaml"
-if not os.path.exists(CONFIG_PATH):
-    print(f"Error: {CONFIG_PATH} not found.")
-    exit(1)
-
-with open(CONFIG_PATH, "r") as f:
+with open(CONFIG_PATH) as f:
     config = yaml.safe_load(f)
 
-EXP_FEATURES   = config["Exposure_Features"]
-CROSS_FEATURES = config["Cross_Asset_Features"]
+EXP_FEATURES   = config.get("Exposure_Features", [])
+CROSS_FEATURES = config.get("Cross_Asset_Features", {})
 N_SPLITS       = config.get("N_Splits", 5)
-THRESHOLD      = config.get("Threshold", 0.6)
-
 ASSETS = ["nifty", "gold", "usdinr"]
 
-# ── Hyperparameter Grid for Logistic Regression ──────────────────────────────
-# 'C' is inverse regularization (smaller = stronger regularization)
+os.makedirs("models/baseline", exist_ok=True)
+os.makedirs("reports/baseline", exist_ok=True)
+
+global_log = []
+
+# Baseline Search Grid
 param_grid = {
-    "logreg__C": [0.001, 0.01, 0.1, 1, 10, 100],
-    "logreg__penalty": ["l2"], # standard ridge regularization
+    "logreg__C": [0.01, 0.1, 1.0, 10.0],
     "logreg__solver": ["lbfgs"]
 }
 
-# ── Training Loop ─────────────────────────────────────────────────────────────
 tscv = TimeSeriesSplit(n_splits=N_SPLITS)
 
 for asset in ASSETS:
     print(f"\n{'='*60}")
-    print(f"  ASSET: {asset.upper()} (Logistic Regression Baseline)")
+    print(f"  ASSET: {asset.upper()} (Symmetric Baseline)")
     print(f"{'='*60}")
+    
+    global_log.append(f"\n{'='*60}")
+    global_log.append(f"  ASSET: {asset.upper()} (Symmetric Baseline)")
+    global_log.append(f"{'='*60}")
 
-    train_path = f"data/processed/train/{asset}.parquet"
-    test_path  = f"data/processed/test/{asset}.parquet"
+    try:
+        train = pl.read_parquet(f"data/processed/train/{asset}.parquet")
+        test  = pl.read_parquet(f"data/processed/test/{asset}.parquet")
 
-    if not os.path.exists(train_path):
-        print(f"[SKIP] {asset.upper()} — Train data not found at {train_path}")
+        # [SIGNAL MASKING]
+        train = train.filter(pl.col("Signal") != 0)
+        test  = test.filter(pl.col("Signal") != 0)
+
+        y_train = train["Meta_Label"].to_pandas()
+        y_test  = test["Meta_Label"].to_pandas()
+        
+        features = EXP_FEATURES + CROSS_FEATURES.get(asset, [])
+        available = [f for f in features if f in train.columns]
+        X_train  = train.select(available).to_pandas()
+        X_test   = test.select(available).to_pandas()
+    except Exception as e:
+        print(f"   [SKIP] {asset}: {e}")
         continue
 
-    train = pl.read_parquet(train_path)
-    test  = pl.read_parquet(test_path)
-
-    # Use Meta_Label as the target (Binary 0/1)
-    y_train = train["Meta_Label"].to_numpy()
-    y_test  = test["Meta_Label"].to_numpy()
-
-    # Drop nulls (last T rows)
-    valid_train = ~np.isnan(y_train)
-    valid_test  = ~np.isnan(y_test)
-    y_train = y_train[valid_train].astype(int)
-    y_test  = y_test[valid_test].astype(int)
-
-    # Use the features defined for this asset
-    features = EXP_FEATURES + CROSS_FEATURES.get(asset, [])
-    available = [f for f in features if f in train.columns]
-
-    X_train = train.select(available).to_pandas().iloc[valid_train]
-    X_test  = test.select(available).to_pandas().iloc[valid_test]
-
-    print(f"   Shape: Train={X_train.shape[0]}, Test={X_test.shape[0]} | Target: Meta_Label")
-    print(f"   Baseline Win Rate: {y_train.mean():.4f}")
-
-    # Build Pipeline
+    # Model Pipeline
     pipe = Pipeline([
         ("scaler", StandardScaler()),
-        ("logreg", LogisticRegression(max_iter=1000, random_state=42))
+        ("logreg", LogisticRegression(max_iter=2000, random_state=42))
     ])
 
     search = GridSearchCV(
-        estimator=pipe,
-        param_grid=param_grid,
-        scoring="roc_auc",
-        cv=tscv,
-        verbose=0,
-        n_jobs=-1
+        estimator=pipe, param_grid=param_grid,
+        scoring="average_precision", cv=tscv, n_jobs=-1
     )
 
     search.fit(X_train, y_train)
+    best_raw_model = search.best_estimator_
 
-    best_model = search.best_estimator_
-    print(f"\n   Best CV ROC AUC: {search.best_score_:.4f}")
-    print(f"   Best Params: {search.best_params_}")
+    # [TS-SAFE] Out-Of-Fold (OOF) Probability Generation
+    print(f"   Generating Calibrated OOF probabilities for {asset}...")
+    oof_probs = np.full(X_train.shape[0], np.nan)
+    
+    for train_idx, test_idx in tscv.split(X_train, y_train):
+        fold_calib = CalibratedClassifierCV(best_raw_model, method='isotonic', cv=3)
+        fold_calib.fit(X_train.iloc[train_idx], y_train.iloc[train_idx])
+        oof_probs[test_idx] = fold_calib.predict_proba(X_train.iloc[test_idx])[:, 1]
+    
+    # SAVE DIRECTIONAL BLOBS
+    val_blob = pl.DataFrame({"OOF_Prob": oof_probs, "Directional_Return": train["Directional_Return"]})
+    val_blob = val_blob.filter(pl.col("OOF_Prob").is_not_nan())
+    val_blob.write_parquet(f"models/baseline/{asset}_val_blob.parquet")
 
-    # ── Evaluation & Reporting ────────────────────────────────────────────────
-    test_probs  = best_model.predict_proba(X_test)[:, 1]
-    train_probs = best_model.predict_proba(X_train)[:, 1]
-
+    # Final Production Model (Calibrated)
+    calibrated_model = CalibratedClassifierCV(
+        best_raw_model, 
+        method='isotonic', 
+        cv=3
+    )
+    calibrated_model.fit(X_train, y_train)
+    
+    # Evaluation
+    train_probs = calibrated_model.predict_proba(X_train)[:, 1]
+    test_probs  = calibrated_model.predict_proba(X_test)[:, 1]
+    
     train_auc = roc_auc_score(y_train, train_probs)
-    test_auc  = roc_auc_score(y_test,  test_probs)
+    test_auc  = roc_auc_score(y_test, test_probs)
+    train_ap  = average_precision_score(y_train, train_probs)
+    test_ap   = average_precision_score(y_test, test_probs)
+    
+    auc_trace = f"   AUC Trace: Train={train_auc:.4f} | Test={test_auc:.4f} | Gap={train_auc - test_auc:.4f}"
+    ap_trace  = f"   AP  Trace: Train={train_ap:.4f} | Test={test_ap:.4f} | Gap={train_ap - test_ap:.4f}"
+    
+    print(f"\n{auc_trace}")
+    print(ap_trace)
+    
+    global_log.append(auc_trace)
+    global_log.append(ap_trace)
+    global_log.append(f"   [DONE] Artifacts saved in models/baseline/")
 
-    # Ensure report directory exists
-    report_dir = "reports/baseline"
-    os.makedirs(report_dir, exist_ok=True)
-    report_path = f"{report_dir}/{asset}_baseline_report.txt"
+    joblib.dump(calibrated_model, f"models/baseline/{asset}_logreg_baseline.joblib")
 
-    with open(report_path, "w") as f_out:
-        header = f"ASSET: {asset.upper()} (Logistic Regression Baseline)\n" + "="*60 + "\n"
-        f_out.write(header)
-        f_out.write(f"Best CV ROC AUC: {search.best_score_:.4f}\n")
-        f_out.write(f"Best Params: {search.best_params_}\n")
-        f_out.write(f"Train AUC: {train_auc:.4f} | Test AUC: {test_auc:.4f}\n\n")
+# Save Cumulative Results Log
+log_path = "reports/baseline/results.txt"
+with open(log_path, "w") as f:
+    f.write("\n".join(global_log))
 
-        print(f"\n   AUC Stats:")
-        print(f"   Train AUC: {train_auc:.4f} | Test AUC: {test_auc:.4f}")
-
-        for t in [0.50, 0.52, 0.55, 0.58]:
-            t_preds = (test_probs >= t).astype(int)
-            
-            # User Metrics: Win Rate & Trade Fraction
-            # Win Rate is Precision of the predicted '1's
-            # Trade Fraction is the percentage of total rows where we take the trade
-            trades_taken = t_preds == 1
-            if trades_taken.any():
-                win_rate = y_test[trades_taken].mean()
-            else:
-                win_rate = 0.0
-            
-            trade_fraction = trades_taken.mean()
-
-            t_report = (
-                f"--- Metrics at Threshold: {t} ---\n"
-                f"Win Rate: {win_rate:.4f} | Trade Fraction: {trade_fraction:.4f}\n"
-            )
-            class_rep = classification_report(y_test, t_preds, target_names=["Fail (0)", "Win (1)"], zero_division=0)
-            
-            f_out.write(t_report + class_rep + "\n")
-            print(f"\n   {t_report}{class_rep}")
-
-    # ── Save Model ────────────────────────────────────────────────────────────
-    save_path = f"models/baseline/{asset}_baseline.joblib"
-    joblib.dump(best_model, save_path)
-    print(f"   ✅ Saved Model  → {save_path}")
-    print(f"   ✅ Saved Report → {report_path}")
-
-print("\nBaseline Training Complete.")
+print(f"\nBaseline Training Complete.")
