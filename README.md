@@ -1,24 +1,100 @@
-# METR — Market Exposure Timing vs Randomness
+# METR — Market Exposure Timing Research
 
-## Overview & Ideology
-**Can a machine learning model trained purely on historical price, volume, and publicly available implied volatility data — without any live sentiment, news, macro indicators, or order flow — actually beat random market entries in the long term?**
+## The Question
+**Can a machine learning model trained purely on historical price, 
+volume, and publicly available implied volatility data — without 
+any live sentiment, news, macro indicators, or order flow — 
+actually beat random market entries in the long term?**
 
-**METR**  is a controlled empirical study designed to isolate true statistical predictive edge from market noise and lucky streaks. By restricting models exclusively to mathematical market microstructure — momentum, volatility regimes both realized and implied, and mean reversion patterns — and validating against 1,000 Monte Carlo simulations of random trade selection, the project empirically tests whether three uncorrelated Indian asset classes (Equities, Commodities, FX) possess predictable short-term inefficiencies exploitable without privileged data access.
+METR is a controlled empirical study testing whether three 
+uncorrelated Indian asset classes possess predictable short-term 
+inefficiencies exploitable without privileged data access. Edge 
+is validated not against a passive benchmark, but against 10,000 
+Monte Carlo simulations of random trade selection — isolating 
+true statistical skill from market drift and lucky streaks.
 
-> **Current Status:** Phase 8.7 — **Production Baseline Complete** 🏆. We have successfully navigated the "Overfitting Crisis," reaching an **Institutional-Grade Alpha Peak (+10.74% edge)** for both Gold and FX (USDINR). The project is now structurally calibrated for real-world backtesting and economics.
+---
 
-## Core Experiments
-1. **Meta-Filter vs. Baseline (The Edge Test):** Evaluating our XGBoost "Trade Filter" against the Interaction-Enhanced Logistic Regression baseline. We measure "Meta-Precision" (Win Rate) to see if the model can identify which momentum signals are trustworthy.
-2. **Macro-Stabilization (The Context Breakthrough):** Successfully injected **India VIX** and **Cross-Asset Stress Filters** (`Risk_Off`, `Nifty_Vol_Ratio`) to bridge the "Interaction Wall." This transition from pure price-action to macro-regime awareness delivered our +10.7% edge on USDINR.
+## Methodology
+The framework operates in two layers:
 
-## Key Performance Benchmarks (Phase 8.7)
-*Measured at the 0.58 Confidence Threshold (Production Level)*
+**Layer 1 — Base Signal:** A momentum conviction filter marks 
+trading opportunities when 5-day return exceeds 20-day volatility. 
+Days without sufficient conviction are marked flat (no trade).
 
-| Asset | Strategy Edge (vs Baseline) | Test ROC AUC | Max Overfitting Gap |
-|---|---|---|---|
-| **GOLD** | **+10.74%** | 0.5868 | 0.08 |
-| **USDINR** | **+10.74%** | 0.5336 | 0.19 |
-| **NIFTY** | **+5.59%** | 0.5737 | 0.10 |
+**Layer 2 — Meta-Filter:** An XGBoost classifier trained on 
+~30 price, volatility, and cross-asset features decides whether 
+to execute each signaled trade. The model never predicts market 
+direction — it only filters which signals are worth acting on.
+
+Labels are generated via the Triple Barrier Method: if the signal 
+direction matches the barrier outcome (take-profit or stop-loss 
+hit), the trade is marked as a success. The model learns to 
+identify conditions where momentum signals follow through.
+
+**Assets:** Nifty 50, GoldBees (NSE), USD/INR  
+**Training:** 2012–2024 | **Out-of-Sample:** 2024–2026  
+**Features:** Momentum, volatility regimes, mean reversion, 
+India VIX derivatives, cross-asset stress filters  
+
+---
+
+## Results
+
+### Gold (GoldBees) — Statistically Significant Edge
+| Metric | Value |
+|--------|-------|
+| Out-of-Sample Return | +17.92% |
+| Sharpe Ratio | 1.21 |
+| Max Drawdown | 7.99% |
+| Calmar Ratio | 1.87 |
+| Win Rate | 66.1% (39/59 trades) |
+| Raw Signal Baseline Sharpe | -0.73 |
+
+The raw momentum signal alone loses money. The meta-filter 
+transforms this into a profitable strategy — a +1.94 Sharpe 
+lift attributable entirely to model trade selection.
+
+### Statistical Validation (Gold, OOS 2024–2026)
+| Test | P-value | Result |
+|------|---------|--------|
+| Monte Carlo (10,000 simulations) | 0.0104 | ✅ Significant |
+| Binomial (win rate vs 50%) | 0.0092 | ✅ Significant |
+| Kupiec (reliability) | 0.0126 | ✅ Significant |
+| T-test (mean return) | 0.1099 | ❌ Underpowered* |
+
+*T-test lacks power at n=59 trades due to selective filtering. 
+Three independent tests confirm significance.
+
+### Nifty 50 — Null Result
+Model Sharpe -0.40. All four tests non-significant. Consistent 
+with deep institutional coverage limiting price-only 
+predictive power.
+
+### USD/INR — Null Result  
+Model Sharpe -0.60. All four tests non-significant. RBI 
+intervention disrupts momentum patterns — structural ceiling 
+on technical prediction for managed currencies.
+
+---
+
+## Core Finding
+The asymmetric results across three asset classes are not a 
+failure — they are the finding. The framework correctly identifies 
+exploitable structure where theory predicts it (commodity ETF 
+with embedded currency exposure) and correctly finds nothing 
+where theory predicts absence of edge (benchmark equity index, 
+managed currency). A framework producing uniformly positive 
+results across all assets would be more suspicious, not more 
+convincing.
+
+> **Price, volume, and publicly available implied volatility 
+> data are sufficient to construct a statistically significant 
+> meta-filter on GoldBees that beats random market entry. 
+> The same data is insufficient on India's benchmark equity 
+> index or its managed currency pair.**
+
+---
 
 ## Project Structure
 ```text
@@ -47,26 +123,11 @@ METR/
 └── README.md                # Project guide (this file)
 ```
 
-## Features & Methodology
-1. **Meta-Labeling Architecture:** Instead of direct direction prediction, we use a two-layer approach:
-   - **Layer 1 (Signal)**: A 5-day momentum "Primary Boss" signal.
-   - **Layer 2 (Filter)**: An XGBoost classifier that predicts `Meta_Label` (1 if Signal = Win, 0 otherwise).
-2. **Adaptive Labeling (Triple Barrier):** We use a volatility-adaptive Triple Barrier sequence ($T=5$) with asset-specific $k$ values (Nifty: 1.5, Gold: 1.75, USDINR: 1.5).
-3. **Fractional Differentiation ($d$):** Resolves the stationarity-memory trade-off by preserving memory (up to 91% correlation) while ensure statistical stationarity for the models.
-4. **Strict Validation:** TimeSeriesSplit is strictly enforced across a 12-year window (2013-2025) to guarantee zero look-ahead bias.
-
-## Getting Started
-
-### Prerequisites
-* Python 3.11+
-* `polars`, `yfinance`, `xgboost`, `scikit-learn`, `matplotlib`, `pyyaml`, `statsmodels`
-
 ### Diving Deeper
 Research observations and results are logged chronologically:
 
 1. **[Documentation & Methodology](docs/documentation.md):** The core findings and theoretical foundations.
-2. **[Grid Search Observations](docs/observations.md):** Daily logs and empirical results for Meta-Labeling.
-3. **[Execution Roadmap](docs/project_plan.md):** Current progress and upcoming phases.
+2. **[Observations](docs/observations.md):** Daily logs and empirical results for the Project.
 
 ## References
 * [Triple Barrier Labelling Algorithm](https://williamsantos.me/posts/2022/triple-barrier-labelling-algorithm/) by William Santos – *Implementation guidance for the forward-scanning volatility-adaptive labeling method.*
