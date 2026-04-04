@@ -109,15 +109,12 @@ def evaluate_triple_barrier_grid(assets):
                     # Score
                     bal = balance_score(pct_neg1, pct_0, pct_pos1)
                     passed = passes_filter(pct_neg1, pct_0, pct_pos1)
-
-
                     combo_label = f"k={k}, T={t}"
                     results.append((combo_label, pct_neg1, pct_0, pct_pos1, bal, passed, t, return_spread))
 
                     header = f"\n{combo_label}: balance={bal:.1f} | spread={return_spread:.2f}%"
                     print(f"[{name}] {header}")
                     
-                    # Print and format DataFrame nicely with only 3 decimal spots for return
                     out_counts = counts.select([
                         pl.col("TB_Label").alias("label"),
                         pl.col("count"),
@@ -128,7 +125,7 @@ def evaluate_triple_barrier_grid(assets):
                     f.write(header + "\n")
                     f.write(str(out_counts) + "\n")
 
-        # --- PLOT (Individual per T) ---
+        # PLOT (Individual per T) 
         for t_val in T_VALUES:
             t_results = [r for r in results if r[6] == t_val]
             if not t_results:
