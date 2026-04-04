@@ -60,9 +60,6 @@ def evaluate_d(assets,thresh):
                 corrs.append(corr)
                 pvals.append(pval)
             
-            # best_d = best_d_value(d_values,pvals)
-            # dvals[name] = best_d
-            # f.write(f"best d_value = {best_d}")
         fig, ax1 = plt.subplots(figsize=(10, 6))
 
         # Primary Axis: ADF p-value (Log Scale)
@@ -89,13 +86,12 @@ def evaluate_d(assets,thresh):
         plt.title(f"FracDiff Trade-off: Stationarity vs Memory ({name.upper()})")
         fig.tight_layout()
         
-        # Combined Legend
         lines, labels = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax1.legend(lines + lines2, labels + labels2, loc='center left')
 
         plt.savefig(f"reports/frac_diff/{name}_d_value_analysis.png")
-        plt.close() # Close to free memory
+        plt.close() 
 
 
 
