@@ -1,102 +1,204 @@
 
-ASSET: NIFTY
-------------------------------
-Top 5 by Gain (Importance):
-  - Vol_Ratio           : 6.29
-  - Ret_5d              : 5.74
-  - Vol Efficiency      : 5.55
-  - VIX_Momentum_Efficiency: 5.50
-  - VIX_ATR_Ratio       : 5.30
+============================================================
+ASSET: NIFTY | FULL AUDIT
+============================================================
 
-Top 5 by Correlation ( r ):
-  - Price_vs_MA20       : -0.1821
-  - Gold_Nifty_RS_20d   : 0.1763
-  - FD_Close            : -0.1663
-  - RS_Momentum_Decoupling: 0.1585
-  - ROC_10              : -0.1577
+1. FEATURE IMPORTANCE (GAIN) - FULL SET:
+----------------------------------------
+  - Gold_Nifty_RS_5d         :     6.4393
+  - ROC_10                   :     6.3827
+  - Ret_5d                   :     6.0421
+  - Vol Efficiency           :     5.6961
+  - VIX_Momentum_Efficiency  :     5.6675
+  - Vol_Ratio                :     5.3790
+  - FD_Close                 :     5.3606
+  - VIX_ATR_Ratio            :     5.2115
+  - RSI_Trend                :     5.1390
+  - BB_Pct                   :     4.8630
+  - Usdinr_Vol_Ratio         :     4.6922
+  - Intraday_Return          :     4.2063
+  - Price_vs_MA20            :     4.1513
+  - Usdinr_Ret_3d            :     4.1367
+  - Gap                      :     4.0799
+  - Ret_20d                  :     4.0076
+  - ATR_Pct                  :     3.8863
+  - Range_Expansion          :     3.8380
+  - Usdinr_Ret_5d            :     3.6991
+  - Usdinr_Stress_Filter     :     3.6364
+  - Momentum_Align           :     3.5158
+  - VIX_Relative             :     3.4573
+  - RS_Momentum_Decoupling   :     3.4525
+  - Gold_Nifty_RS_20d        :     3.3894
+  - Gap_Intraday_Convinction :     3.3352
+  - RSI                      :     3.2925
+  - MACD_Hist                :     3.1290
+  - Vol_5d                   :     1.7787
 
-
-ASSET: GOLD
-------------------------------
-Top 5 by Gain (Importance):
-  - Ret_5d              : 23.09
-  - Vol Efficiency      : 19.63
-  - VIX_Momentum_Efficiency: 13.30
-  - FD_Close            : 7.92
-  - RSI                 : 7.72
-
-Top 5 by Correlation ( r ):
-  - Usdinr_Stress_Filter: 0.1431
-  - Ret_5d              : -0.1318
-  - Vol Efficiency      : -0.1268
-  - VIX_Momentum_Efficiency: -0.1124
-  - RSI                 : -0.1087
-
-
-ASSET: USDINR
-------------------------------
-Top 5 by Gain (Importance):
-  - Vol Efficiency      : 6.45
-  - BB_Pct              : 5.54
-  - VIX_Momentum_Efficiency: 5.13
-  - ROC_10              : 5.10
-  - Vol_Ratio           : 4.98
-
-Top 5 by Correlation ( r ):
-  - Nifty_Vol_20d       : -0.1332
-  - Nifty_Vol_Ratio     : 0.1217
-  - Nifty_Gold_RS_5d    : 0.0938
-  - Vol Efficiency      : 0.0910
-  - Gold_Ret_5d         : -0.0707
-
-
-ASSET: NIFTY
-------------------------------
-Top 5 by Gain (Importance):
-  - Gold_Nifty_RS_5d    : 6.44
-  - ROC_10              : 6.38
-  - Ret_5d              : 6.04
-  - Vol Efficiency      : 5.70
-  - VIX_Momentum_Efficiency: 5.67
-
-Top 5 by Correlation ( r ):
-  - Gold_Nifty_RS_20d   : 0.1282
-  - VIX_ATR_Ratio       : -0.1282
-  - Gold_Nifty_RS_5d    : 0.1278
-  - Price_vs_MA20       : -0.1200
-  - Risk_Off            : 0.1117
-
-
-ASSET: GOLD
-------------------------------
-Top 5 by Gain (Importance):
-  - VIX_Momentum_Efficiency: 13.61
-  - RSI                 : 11.06
-  - Ret_5d              : 10.50
-  - Vol Efficiency      : 8.26
-  - BB_Pct              : 6.80
-
-Top 5 by Correlation ( r ):
-  - RS_Momentum_Decoupling: -0.1083
-  - Usdinr_Stress_Filter: 0.1037
-  - Usdinr_Ret_5d       : 0.0776
-  - Ret_20d             : 0.0771
-  - RSI_Trend           : 0.0747
+2. ALPHA DIRECTION (CORRELATION) - FULL SET:
+----------------------------------------
+  - Gold_Nifty_RS_20d        :  +0.128218
+  - VIX_ATR_Ratio            :  -0.128194
+  - Gold_Nifty_RS_5d         :  +0.127849
+  - Price_vs_MA20            :  -0.119970
+  - Risk_Off                 :  +0.111692
+  - Momentum_Align           :  +0.106837
+  - FD_Close                 :  -0.104758
+  - ATR_Pct                  :  -0.104467
+  - RSI                      :  -0.093148
+  - Vol_5d                   :  -0.086241
+  - Ret_20d                  :  -0.079760
+  - ROC_10                   :  -0.077509
+  - BB_Pct                   :  -0.076887
+  - RSI_Trend                :  -0.074463
+  - RS_Momentum_Decoupling   :  +0.060976
+  - Ret_5d                   :  -0.050867
+  - Gap                      :  -0.050255
+  - MACD_Hist                :  -0.049648
+  - VIX_Momentum_Efficiency  :  -0.046705
+  - Usdinr_Ret_3d            :  -0.039376
+  - Vol_Ratio                :  +0.038326
+  - Vol Efficiency           :  -0.036806
+  - Range_Expansion          :  -0.035109
+  - Usdinr_Vol_Ratio         :  -0.033048
+  - VIX_Relative             :  +0.025334
+  - Intraday_Return          :  -0.013112
+  - Usdinr_Ret_5d            :  -0.009503
+  - Usdinr_Stress_Filter     :  -0.003319
+  - Gap_Intraday_Convinction :  -0.001823
+  - VIX_Shock                :  +0.001004
 
 
-ASSET: USDINR
-------------------------------
-Top 5 by Gain (Importance):
-  - RSI                 : 5.90
-  - BB_Pct              : 5.57
-  - Price_vs_MA20       : 5.28
-  - Gap                 : 4.48
-  - Usdinr_Stress_Filter: 4.11
+============================================================
+ASSET: GOLD | FULL AUDIT
+============================================================
 
-Top 5 by Correlation ( r ):
-  - Vol Efficiency      : 0.1593
-  - Nifty_Vol_Ratio     : 0.1531
-  - Vol_Ratio           : 0.1133
-  - BB_Pct              : 0.1023
-  - VIX_Shock           : -0.0948
+1. FEATURE IMPORTANCE (GAIN) - FULL SET:
+----------------------------------------
+  - VIX_Momentum_Efficiency  :    13.6125
+  - RSI                      :    11.0617
+  - Ret_5d                   :    10.5025
+  - Vol Efficiency           :     8.2609
+  - BB_Pct                   :     6.8011
+  - FD_Close                 :     4.9952
+  - Price_vs_MA20            :     4.5612
+  - Usdinr_Ret_3d            :     4.3015
+  - ATR_Pct                  :     3.8314
+  - MACD_Hist                :     3.6677
+  - VIX_Relative             :     3.4001
+  - Usdinr_Ret_5d            :     3.3061
+  - VIX_ATR_Ratio            :     2.9999
+  - RSI_Trend                :     2.9849
+  - VIX_Shock                :     2.8072
+  - RS_Momentum_Decoupling   :     2.7601
+  - Range_Expansion          :     2.4992
+  - Nifty_Gold_RS_5d         :     2.4034
+  - Vol_Ratio                :     2.3816
+  - ROC_10                   :     2.3095
+  - Intraday_Return          :     2.2791
+  - Usdinr_Vol_Ratio         :     2.2371
+  - Vol_5d                   :     2.0729
+  - Ret_20d                  :     1.9168
+
+2. ALPHA DIRECTION (CORRELATION) - FULL SET:
+----------------------------------------
+  - RS_Momentum_Decoupling   :  -0.108281
+  - Usdinr_Stress_Filter     :  +0.103698
+  - Usdinr_Ret_5d            :  +0.077607
+  - Ret_20d                  :  +0.077095
+  - RSI_Trend                :  +0.074736
+  - VIX_Shock                :  -0.066280
+  - VIX_ATR_Ratio            :  -0.058507
+  - Vol_Ratio                :  +0.055215
+  - Usdinr_Vol_Ratio         :  -0.053973
+  - Intraday_Return          :  +0.051316
+  - FD_Close                 :  +0.049921
+  - Gap_Intraday_Convinction :  +0.047251
+  - Equity_Stress            :  -0.046749
+  - BB_Pct                   :  +0.043314
+  - Price_vs_MA20            :  +0.038079
+  - MACD_Hist                :  +0.036350
+  - ROC_10                   :  +0.035701
+  - Usdinr_Ret_3d            :  +0.031878
+  - RSI                      :  +0.031328
+  - Range_Expansion          :  -0.031320
+  - Nifty_Gold_RS_5d         :  +0.029827
+  - ATR_Pct                  :  -0.022129
+  - Gap                      :  -0.018039
+  - Ret_5d                   :  -0.017796
+  - Vol_5d                   :  +0.011303
+  - VIX_Momentum_Efficiency  :  +0.006907
+  - Vol Efficiency           :  +0.006814
+  - VIX_Relative             :  -0.003521
+  - Momentum_Align           :  +0.001106
+
+
+============================================================
+ASSET: USDINR | FULL AUDIT
+============================================================
+
+1. FEATURE IMPORTANCE (GAIN) - FULL SET:
+----------------------------------------
+  - RSI                      :     5.8965
+  - BB_Pct                   :     5.5706
+  - Price_vs_MA20            :     5.2754
+  - Gap                      :     4.4847
+  - Usdinr_Stress_Filter     :     4.1056
+  - ROC_10                   :     3.9027
+  - VIX_ATR_Ratio            :     3.8979
+  - Ret_20d                  :     3.7763
+  - MACD_Hist                :     3.7078
+  - Ret_5d                   :     3.6278
+  - Gap_Intraday_Convinction :     3.5580
+  - Gold_Ret_5d              :     3.5070
+  - FD_Close                 :     3.4509
+  - RSI_Trend                :     3.4293
+  - VIX_Relative             :     3.3653
+  - Vol_5d                   :     3.2967
+  - VIX_Momentum_Efficiency  :     3.1901
+  - Gold_Vol_20d             :     3.1873
+  - Cross_Vol_Ratio          :     3.1100
+  - Nifty_Vol_20d            :     3.0042
+  - ATR_Pct                  :     2.9035
+  - Nifty_Ret_5d             :     2.9016
+  - Vol Efficiency           :     2.8338
+  - Range_Expansion          :     2.7526
+  - Nifty_Vol_Ratio          :     2.7145
+  - VIX_Shock                :     2.5546
+  - Nifty_Gold_RS_5d         :     2.5014
+  - Vol_Ratio                :     2.3039
+  - Intraday_Return          :     2.2626
+
+2. ALPHA DIRECTION (CORRELATION) - FULL SET:
+----------------------------------------
+  - Vol Efficiency           :  +0.159289
+  - Nifty_Vol_Ratio          :  +0.153135
+  - Vol_Ratio                :  +0.113252
+  - BB_Pct                   :  +0.102310
+  - VIX_Shock                :  -0.094774
+  - VIX_Momentum_Efficiency  :  +0.090457
+  - Nifty_Vol_20d            :  -0.087650
+  - Ret_5d                   :  +0.080756
+  - VIX_Relative             :  -0.076919
+  - Gold_Vol_20d             :  -0.074971
+  - MACD_Hist                :  +0.068161
+  - RSI                      :  +0.066400
+  - ROC_10                   :  +0.057749
+  - Nifty_Ret_5d             :  +0.053507
+  - Price_vs_MA20            :  +0.051816
+  - Nifty_Gold_RS_5d         :  +0.049280
+  - Usdinr_Stress_Filter     :  +0.047826
+  - RSI_Trend                :  +0.045007
+  - Cross_Vol_Ratio          :  -0.041794
+  - Vol_5d                   :  +0.040124
+  - Range_Expansion          :  +0.033925
+  - Gap_Intraday_Convinction :  +0.031095
+  - Ret_20d                  :  +0.026997
+  - Gold_Ret_5d              :  -0.016137
+  - Gap                      :  +0.014460
+  - ATR_Pct                  :  +0.010041
+  - Intraday_Return          :  -0.008965
+  - FD_Close                 :  +0.008611
+  - Risk_Off                 :  +0.005088
+  - VIX_ATR_Ratio            :  +0.004601
+  - Equity_Stress            :  -0.003962
 
