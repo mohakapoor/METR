@@ -3,7 +3,6 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-# Configuration - Production Locks
 ASSET_CONFIG = {
     "nifty": {"threshold": 0.49, "label": "Nifty"},
     "gold":  {"threshold": 0.52, "label": "Gold"},
@@ -14,17 +13,16 @@ DATA_DIR = "models/meta"
 REPORT_DIR = "reports/backtest"
 
 def calculate_metrics(returns):
-    """Forensic Performance Audit"""
     if len(returns) < 5:
         return 0.0, 0.0, 0.0, 0.0, 0.0
     
-    # 1. Annualized Sharpe (Daily - Institutional Standard)
+    # 1. Annualized Sharpe
     n_years = len(returns) / 252
     mean_ret = returns.mean()
     std_ret  = returns.std()
     account_sharpe = (mean_ret / std_ret) * np.sqrt(252) if std_ret > 0 else 0.0
     
-    # 2. Annualized Sharpe (Trade-Frequency - Forensic Signal Skill)
+    # 2. Annualized Sharpe (Trade-Frequency)
     trade_returns = returns[returns != 0]
     n_trades = len(trade_returns)
     trades_per_year = n_trades / n_years if n_years > 0 else 0.0
@@ -48,7 +46,6 @@ def calculate_metrics(returns):
     return total_comp_ret, account_sharpe, signal_sharpe, mdd, calmar
 
 def generate_asset_plots(df, asset_name):
-    """Visual Report for Single Asset"""
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), gridspec_kw={'height_ratios': [3, 1]})
     
     # 1. Equity Curve
