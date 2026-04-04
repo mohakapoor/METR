@@ -1,14 +1,3 @@
-"""
-feature_analysis.py — Phase 8: Meta-Filter Feature Analysis
-===========================================================
-Loads each asset's Phase 7 XGBoost meta-model and test data to generate:
-  1. Feature Importance (Gain)
-  2. Feature vs Meta_Label Correlation (Win: 1 vs Loss: 0)
-  3. Combined plot per asset
-
-Reports saved to: reports/feature_analysis/
-"""
-
 import os
 import polars as pl
 import numpy as np
@@ -27,24 +16,15 @@ CROSS_FEATURES = config["Cross_Asset_Features"]
 
 ASSETS = ["nifty", "gold", "usdinr"]
 REPORT_DIR = "reports/feature_analysis"
-os.makedirs(REPORT_DIR, exist_ok=True)
 
 # Per-Asset Analysis
 for asset in ASSETS:
     model_path = f"models/meta/{asset}_xgb_meta.joblib"
-    if not os.path.exists(model_path):
-        print(f"[SKIP] {asset} — meta-model not found at {model_path}")
-        continue
-
-    model = joblib.load(model_path)
-    
-    
+    model = joblib.load(model_path) 
     test = pl.read_parquet(f"data/processed/test/{asset}.parquet")
-
     features  = EXP_FEATURES + CROSS_FEATURES.get(asset, [])
     available = list(dict.fromkeys(f for f in features if f in test.columns))  
 
-    # Meta-Labels: 1 = Win, 0 = Loss
     labels = test["Meta_Label"].to_numpy() 
     X = test.select(available).to_pandas()
 
@@ -53,10 +33,7 @@ for asset in ASSETS:
     print(f"{'='*60}")
 
     # 1. Feature Importance (Gain)
-    # Handle CalibratedClassifierCV wrapper vs raw XGBoost
     if hasattr(model, "calibrated_classifiers_"):
-        # Extract from the first estimator in the calibration ensemble
-        # (Assuming cv='prefit' so they are identical)
         actual_booster = model.calibrated_classifiers_[0].estimator.get_booster()
     else:
         actual_booster = model.get_booster()
@@ -68,7 +45,7 @@ for asset in ASSETS:
 
     print(f"\n  Feature Importance (Gain):")
     max_gain = max(feat_vals) if feat_vals else 1
-    for name, val in feat_order[:15]: # Show top 15 in terminal for context
+    for name, val in feat_order[:15]:
         bar = "█" * int(val / max_gain * 30)
         print(f"    {name:25s} {val:8.2f}  {bar}")
 
@@ -116,13 +93,12 @@ for asset in ASSETS:
     out = f"{REPORT_DIR}/{asset}_meta_analysis.png"
     plt.savefig(out, dpi=150, bbox_inches="tight")
     plt.close()
-    print(f"\n  ✅ Saved → {out}")
 
-    # 4. Append to Forensic Log (ALL results)
+    # 4. Append to Log
     summary_path = f"{REPORT_DIR}/log.txt"
     with open(summary_path, "a") as sf:
         sf.write(f"\n{'='*60}\n")
-        sf.write(f"ASSET: {asset.upper()} | FULL AUDIT\n")
+        sf.write(f"ASSET: {asset.upper()}\n")
         sf.write(f"{'='*60}\n\n")
         
         sf.write("1. FEATURE IMPORTANCE (GAIN) - FULL SET:\n")
@@ -130,10 +106,8 @@ for asset in ASSETS:
         for name, val in feat_order:
             sf.write(f"  - {name:25s}: {val:10.4f}\n")
             
-        sf.write("\n2. ALPHA DIRECTION (CORRELATION) - FULL SET:\n")
+        sf.write("\n2. CORRELATION - FULL SET:\n")
         sf.write(f"{'-'*40}\n")
         for name, val in sorted_corrs:
             sf.write(f"  - {name:25s}: {val:+10.6f}\n")
         sf.write("\n")
-
-print("\nPhase 8 analysis complete.")
