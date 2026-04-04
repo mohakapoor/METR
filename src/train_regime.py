@@ -1,10 +1,9 @@
 """
-train_regime.py — Phase 9: HMM Regime Conditioning
+train_regime.py
 ==================================================
 - Goal: Categorize the market into 3 "Hidden States" (e.g. Calm, Trending, Crisis).
 - Mechanism: GaussianHMM (hmmlearn)
-- Rule: Fit only on Train, Predict on Train & Test (Prevent Leakage).
-- Result: Updated parquet files with 'HMM_Regime' column.
+
 """
 
 import polars as pl
@@ -22,8 +21,6 @@ with open(CONFIG_PATH, "r") as f:
 ASSETS = ["nifty", "gold", "usdinr"]
 REGIME_FEATS = config.get("Regime_Features")
 
-
-
 REPORTS = []
 
 # Function: Train & Inject
@@ -35,13 +32,8 @@ def process_asset_regime(asset):
     train_path = f"data/processed/train/{asset}.parquet"
     test_path  = f"data/processed/test/{asset}.parquet"
 
-    if not os.path.exists(train_path):
-        print(f"   [SKIP] Train data missing at {train_path}")
-        return
-
     train = pl.read_parquet(train_path)
     test  = pl.read_parquet(test_path)
-
     X_train_raw = train.select(REGIME_FEATS).to_numpy()
     X_test_raw  = test.select(REGIME_FEATS).to_numpy()
 
@@ -56,14 +48,11 @@ def process_asset_regime(asset):
     fit_msg = f"   Fitting HMM on {len(X_train_raw)} sample points..."
     print(fit_msg)
     REPORTS.append(fit_msg)
-    
     model.fit(X_train_raw)
 
-    # Predict on both
     train_states = model.predict(X_train_raw)
     test_states  = model.predict(X_test_raw)
 
-    # Interpret States
     vol_idx = REGIME_FEATS.index("Vol_20d") if "Vol_20d" in REGIME_FEATS else 1
     ret_idx = REGIME_FEATS.index("Ret_5d") if "Ret_5d" in REGIME_FEATS else 0
 
@@ -92,17 +81,11 @@ def process_asset_regime(asset):
     # Save Model
     model_file = f"models/regime/{asset}_hmm.joblib"
     joblib.dump(model, model_file)
-    
     save_msg = f"\n   [DONE] Saved HMM Model  -> {model_file}"
     print(save_msg)
     REPORTS.append(save_msg)
-
-# Main 
 for asset in ASSETS:
     process_asset_regime(asset)
-
-# Finalize Report
 with open("reports/regime_results.txt", "w") as f:
     f.write("\n".join(REPORTS))
 
-print("\nPhase 9: Regime Conditioning Complete. Report saved to reports/regime_results.txt")
