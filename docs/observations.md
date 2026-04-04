@@ -166,10 +166,10 @@ These manual overrides ensure the features maintain a strong long-term memory (0
 
 ---
 
-### 2026-03-31 — Phase 4: Multi-Class XGBoost Training & Feature Analysis
+### 2026-03-31 —  Multi-Class XGBoost Training & Feature Analysis
 
 **What was done:**
-Upgraded the training pipeline (`src/train_exposure.py`) from binary classification to multi-class (`multi:softprob`, 3 classes: -1, 0, +1 remapped to 0, 1, 2). Unified mode only — each asset trains on `Exposure_Features + Cross_Asset_Features[asset]`. Ran full GridSearchCV (128 combinations × 5 folds) on an A5000 GPU. Separately ran `src/feature_analysis.py` (updated for one-vs-rest correlations) across all 3 assets.
+Upgraded the training pipeline (`src/train_exposure.py`) from binary classification to multi-class (`multi:softprob`, 3 classes: -1, 0, +1 remapped to 0, 1, 2). Unified mode only — each asset trains on `Exposure_Features + Cross_Asset_Features[asset]`. Ran full GridSearchCV (128 combinations × 5 folds). Separately ran `src/feature_analysis.py` (updated for one-vs-rest correlations) across all 3 assets.
 
 ---
 
@@ -271,7 +271,7 @@ Several features found to be redundant or harmful and will be dropped before nex
 
 ---
 
-### 2026-03-31 — Phase 4: Iteration 2 (Trimmed Feature Set)
+### 2026-03-31 — Iteration 2 (Trimmed Feature Set)
 
 **What was done:**
 Retrained all 3 unified models using the trimmed 13 per-asset technical features (removed 8 redundant/noise features). Compared metrics against the Iteration 1 baseline.
@@ -324,7 +324,7 @@ VIX provides a forward-looking expectation of volatility. This is expected to:
 
 ---
 
-## **Phase 4: Final Experimental Conclusion**
+###  Final Experimental Conclusion
 
 Based on empirical evaluation of triple barrier labeling across multiple horizons and barrier widths, **T = 5** was selected as the optimal prediction horizon.
 
@@ -414,7 +414,7 @@ represents an optimal balance between **signal strength (return spread)**, **lab
 
 ---
 
-### 2026-04-01 — Phase 5: Meta-Labeling Transition & Signal Analysis
+### 2026-04-01 —  Meta-Labeling Transition & Signal Analysis
 
 **What was done:**
 Implemented the **Meta-Labeling** architecture in `src/feature_eng.py`. This marks a fundamental shift in strategy from predicting market direction to predicting the **reliability of a primary signal**.
@@ -447,10 +447,10 @@ Implemented the **Meta-Labeling** architecture in `src/feature_eng.py`. This mar
 
 ---
 
-### 2026-04-02 — Phase 6: Logistic Regression Baseline Analysis
+### 2026-04-02 — Logistic Regression Baseline Analysis
 
 **What was done:**
-Established a quantitative baseline using Logistic Regression (`src/train_baseline.py`) to measure the performance of a simple linear model on the Meta-Labeling task. Analyzed the trade-off between **Win Rate** and **Trade Fraction** across multiple probability thresholds.
+Established a baseline using Logistic Regression (`src/train_baseline.py`) to measure the performance of a simple linear model on the Meta-Labeling task. Analyzed the trade-off between **Win Rate** and **Trade Fraction** across multiple probability thresholds.
 
 **Baseline Performance Summary:**
 
@@ -468,7 +468,7 @@ Established a quantitative baseline using Logistic Regression (`src/train_baseli
 1. **Linear Failure**: The linear model (AUC ~0.53 - 0.55) fails to isolate high-probability trades without effectively killing the strategy (Trade Fraction < 2%). This confirms the market structure is non-linear—"Momentum Quality" depends on something more complex than simple weighted sums of indicators.
 2. **Nifty's "Signal Black Hole"**: For Nifty, the linear baseline is unable to find *any* signal with > 52% conviction. This confirms that the 5-day momentum alone is extremely noisy for Indian equities in the current regime.
 
-### Phase 6: Interaction-Enhanced Baseline ✅ *(Current)*
+### Interaction-Enhanced Baseline
 Following the synthesis of **Interaction Features** (ATR_MACD, VIX_Relative, RS_Mom_Decoupling), we re-ran the Logistic Regression baseline to see if these "pre-packaged" non-linearities could help a linear model.
 
 **NIFTY (Logistic Regression + Interactions)**
@@ -488,7 +488,7 @@ Following the synthesis of **Interaction Features** (ATR_MACD, VIX_Relative, RS_
 - **Threshold 0.55**: **46.7%** Win Rate | **20.0%** Trade Fraction
 - **Conclusion**: Stable, moderate edge. The linear model can extract a 5% "Alpha" over the baseline 41% with high frequency.
 
-### Phase 7: Randomized Meta-Training ✅ *(Current Milestone)*
+### Randomized Meta-Training 
 Switched to **RandomizedSearchCV** (n=20) with broadened hyperparameter ranges (Depth 3-6, LR 0.01-0.10). This phase successfully integrated the "Exhaustion Hypothesis" and Interaction Features.
 
 **NIFTY (XGBoost Meta-Filter)**
@@ -507,14 +507,14 @@ Switched to **RandomizedSearchCV** (n=20) with broadened hyperparameter ranges (
 - **Test ROC AUC**: 0.5169
 - **Conclusion**: Performance remains near-random. The low AUC suggests that momentum "Exhaustion" is not a reliable filter for Managed FX regimes.
 
-### Phase 7 Strategic Conclusion:
-The project has successfully reached the **"Alpha Verification"** stage. We have proven that non-linear interaction features (VIX + Cross-Asset RS) can reliably boost the precision of a momentum signal by **5-10%** absolute.
+###  Conclusion:
+Proven that non-linear interaction features (VIX + Cross-Asset RS) can reliably boost the precision of a momentum signal by **5-10%** absolute.
 
 **Next Mandate**: Isolate the specific features driving the Gold outperformance and attempt to bridge the "Last Mile" to a 50% Win Rate on Nifty.
 
 ---
 
-### Phase 8: Model Interpretation & Feature Audit ✅ *(New)*
+### Model Interpretation & Feature Audit 
 *Conducted SHAP Value attribution and Gain analysis to isolate Alpha sources for the portfolio.*
 
 **1. The GOLD Blueprint: "The Efficiency Trap"**
@@ -532,9 +532,7 @@ The project has successfully reached the **"Alpha Verification"** stage. We have
 - **Finding**: USDINR's Meta-Target is 38% correlated with **VIX Intensity**. 
 - **Strategic Interpretation**: The FX model is trading "Global Stress" shocks rather than local technical momentum. This explains the lower AUC—it's a macro-proxy, not a pure regime filter.
 
-### Phase 8.5: The Sweet Spot (Recalibration Victory) ✅
-**Status**: Completed (Stabilized Portfolio)
-**Date**: 2026-04-03
+### 2026-04-03: Hyperparameter Tuning
 
 We successfully identified the "Sweet Spot" hyperparameter grid that balances non-linear learning with aggressive overfitting suppression.
 
@@ -549,9 +547,7 @@ We successfully identified the "Sweet Spot" hyperparameter grid that balances no
 - **NIFTY**: Test AUC **0.5737** | Gap: **0.10** | Edge: **+6.61%**
 - **USDINR**: Test AUC **0.5429** | Gap: **0.17** | Edge: **+4.47%**
 
-### Phase 8.6: Macro-Regime Stabilization 🚀
-**Status**: Completed (High-Conviction Unlocked)
-**Date**: 2026-04-03
+### Macro-Regime Stabilization 
 
 Injected specialized macro-signals (`Risk_Off`, `Cross_Vol_Ratio`, `Usdinr_Stress_Filter`) to move USDINR from local technicals to global regime awareness.
 
@@ -562,10 +558,7 @@ Injected specialized macro-signals (`Risk_Off`, `Cross_Vol_Ratio`, `Usdinr_Stres
 #### Strategic Pivot:
 The **Usdinr_Stress_Filter** (Panic * Risk-Off) successfully isolated a highly selective, high-conviction cluster of winning trades. The edge **doubled** (3.8% → 10.7%).
 
-**Phase 8.7: FINAL PRODUCTION BUILD (Macro-Recalibration) 🏆**
-**Status**: APPROVED & LOCKED
-**Date**: 2026-04-03
-
+**Macro-Recalibration**
 Confirmed the 0.19 gap as a healthy "Specialization Premium" and locked in the +10.74% alpha baseline for the portfolio.
 
 #### Final STANDINGS (0.58 Threshold):
@@ -573,10 +566,8 @@ Confirmed the 0.19 gap as a healthy "Specialization Premium" and locked in the +
 - **USDINR**: **+10.74% Edge** | Gap: 0.19
 - **NIFTY**: **+5.59% Edge** | Gap: 0.10
 
-**Next Phase**: Deployment to **Phase 10: Backtest & Economics**.
 
-## Phase 9: Regime Conditioning (Experimental Pivot) — REJECTED
-**Status**: Completed (Failed to improve Alpha)
+## Regime Conditioning (Experimental Pivot) — REJECTED
 **Date**: 2026-04-03
 
 ### The Objective
@@ -595,8 +586,7 @@ The HMM approach was rejected for inclusion in the final model for the following
 2. **Noise Sensitivity**: The HMM added significant architectural complexity without improving the "Trending vs. Mean-Reversion" separation.
 3. **Data Integrity**: The risk of overfitting to the specific 2014-2023 training clusters outweighed the marginal (zero) performance gain.
 
-### Phase 8.8: Final Alpha Audit (Structural Calibration) 🔍
-**Status**: APPROVED & AUDITED
+### Final Alpha Audit 
 **Date**: 2026-04-03
 
 Conducted a final SHAP/Gain audit to isolate the specific drivers of our +10.74% edge.
@@ -606,26 +596,24 @@ Conducted a final SHAP/Gain audit to isolate the specific drivers of our +10.74%
 - **USDINR**: **Equity Panic Proxy**. `Nifty_Vol_20d` (r=-0.13) and `Nifty_Vol_Ratio` (r=0.12) are the top predictors. The model has successfully moved from price-noise to Indian equity stress-detection.
 - **NIFTY**: **Mean-Reversion Discipline**. The -0.18 correlation with `Price_vs_MA20` proves the meta-filter is successfully "pruning" overextended momentum trades.
 
-### Phase 8 Strategic Conclusion:
-We have successfully transformed the meta-filters from "Black Box" XGBoost models into **Macro-Aware Engines**. We know exactly why they win, and we have the separation scores to prove it.
-
-**Phase 9 (HMM Rejection)** has been archived for empirical integrity. We are proceeding to **Phase 10: Backtest & Economics** with 100% architectural confidence.
+#### Conclusion:
+Successfully transformed the meta-filters from "Black Box" XGBoost models into **Macro-Aware Engines**. We know exactly why they win, and we have the separation scores to prove it.
 
 ---
 
-### 2026-04-04 — Phase 10.1.2: Symmetric Alpha (Short Recovery) & Signal Masking
+### 2026-04-04 — Symmetric Alpha (Short Recovery) & Signal Masking
 
 **What was done:**
 Refactored the entire METR pipeline for **Directional Symmetry**. This identified and fixed a structural flaw where Short-position wins were being recorded as losses, and background noise was polluting the Meta-Filter training.
 
-1. **Symmetric Alpha (Directional Returns)**: 
+1. **Directional Returns**: 
    - Introduced `Directional_Return = TB_Return * Signal` in `src/indicators.py`.
    - This correctly credits downward moves as profit (+kσ) when a Short signal (-1) is active.
    - Fixed the "structural blindness" that caused Gold and USD/INR to show negative Sharpes in initial audits.
 2. **Signal-Conditional Training (Masking)**:
    - Implemented a strict `Signal != 0` filter in `src/train_trade_filter.py` and `colab/train_tf.ipynb`.
    - The Meta-Filter now exclusively trains on actionable trade entries, removing thousands of rows of "background noise" (No-Signal days).
-3. **Institutional Precision Metrics**:
+3. **Precision Metrics**:
    - Added **AUPRC (Average Precision)** to the training reports to provide a more rigorous assessment of "Trade Entry Skill" vs. simple class discrimination.
 4. **Volatility-Normalized Signals**:
    - Updated the primary signal in `src/indicators.py` to require a move exceeding the 20-day trailing volatility floor, ensuring the Meta-Filter only acts on meaningful momentum.
@@ -643,37 +631,30 @@ Refactored the entire METR pipeline for **Directional Symmetry**. This identifie
 2. **Signal Masking Success**: Removing the `Signal == 0` rows significantly cleaned the Precision-Recall curves. The model is no longer "guessing" on flat days; it is strictly a regime-filter for active signals.
 3. **Institutional Alignment**: The project now supports a 2-way symmetric portfolio (Long/Short) with cost-aware directional P&L tracking.
 
-**Next Steps:**
-- Run the final `src/threshold_optimizer.py` to identify the new optimal Sharpes.
-- Proceed to Phase 11: Master Backtest (Equity Curves & Drawdown Plots).
 
 ---
 
-### 2026-04-04 — Phase 10.1.3: Strategic Feature Inference (The Alpha DNA)
+### 2026-04-04 — Feature Inference 
 
 **What was done:**
 Conducted a deep-dive SHAP/Gain audit on the newly symmetrized models to identify the specific macro and technical drivers of the 0.59 AUC performance in Nifty and Gold.
 
 **Audit Results (Top Drivers):**
 
-| Asset | Key Driver (Gain) | Key Correlation (Win Rate) | Strategic Inference |
-|---|---|---|---|
-| **NIFTY** | `Gold_Nifty_RS_5d` | `Gold_Nifty_RS_20d` (+0.13) | **Macro-Relative**: Nifty momentum is only "Real" when it is structurally outperforming Gold. If Gold leads, Nifty signals are low-conviction noise. |
-| **GOLD** | `VIX_Mom_Efficiency` | `Usdinr_Stress_Filter` (+0.10) | **Safe Haven**: Gold's edge is 2x more dependent on VIX efficiency than any technical indicator. It wins primarily when USDINR macro-stress remains elevated. |
-| **USD/INR** | `RSI / BB_Pct` | `Vol Efficiency` (+0.16) | **Range Reversion**: This is your only asset where oscillators dominate. The meta-filter is essentially a "Reversion Guard," killing trend signals on overextended days. |
+| Asset | Key Driver (Gain) | Key Correlation (Win Rate) |
+|---|---|---|
+| **NIFTY** | `Gold_Nifty_RS_5d` | `Gold_Nifty_RS_20d` (+0.13) | 
+| **GOLD** | `VIX_Mom_Efficiency` | `Usdinr_Stress_Filter` (+0.10) |
+| **USD/INR** | `RSI / BB_Pct` | `Vol Efficiency` (+0.16) |
 
 **Key Observations:**
 1. **The VIX Mirror**: `VIX_ATR_Ratio` is strongly negatively correlated (-0.12) with winning in Nifty. This suggests that "Messy" volatility expansion is the primary killer of equity momentum.
 2. **Equity Cross-Over (FX)**: USDINR momentum reliability is 15% correlated with `Nifty_Vol_Ratio`. The currency only drifts cleanly when the domestic equity market is under volatility stress.
 3. **Efficiency as a Trap**: High `Vol Efficiency` in Gold remains a warning sign—trend stability in Gold often precedes a symmetric reversal rather than a breakout.
 
-**Next Steps:**
-- **Final Sharpe Sweep**: Translate these high-precision entries into cost-adjusted Sharpes.
-- **Master Backtest**: Verify if the "Macro-Relative" lead of Nifty/Gold creates a stable portfolio equity curve.
-
 ---
 
-### 2026-04-04 — Phase 10.2.1: The Alpha Premium Audit (Meta vs. Baseline)
+### 2026-04-04 — Meta vs. Baseline
 
 **What was done:**
 Conducted a head-to-head performance audit between the **Complex Meta-Filter (XGBoost)** and a **Linear Baseline (LogReg)**. Both models were trained on the same symmetric, signal-conditional data.
@@ -691,32 +672,28 @@ Conducted a head-to-head performance audit between the **Complex Meta-Filter (XG
 2.  **Structural Integrity**: Gold's $0.58$ AUC baseline is remarkably high. This confirms that the base momentum signal in Gold is "Intrinsic"—it survives even the simplest linear regression.
 3.  **Managed-Float Rejection**: The $0.49$ Baseline for USD/INR confirms that linear models see only "Coin-Flips" in currency. XGBoost is required to filter the RBI-induced volatility traps.
 
-**Next Steps:**
-### 2026-04-04 — Phase 10.2.5: Friction Sensitivity Audit (Gross vs. Net)
+
+### 2026-04-04 — Friction Sensitivity Audit (Gross vs. Net)
 
 **What was done:**
 Conducted a simultaneous dual-friction audit (0 bps vs. 5 bps) to identify the "Alpha Retention" of each asset. This provides the final sanity check for the strategy's real-world viability.
 
 **Audit Results (Symmetric XGBoost):**
 
-| Asset | Gross Sharpe (0 bps) | Net Sharpe (5 bps) | **Retention** | coverage (%) | Verdict |
-|---|---|---|---|---|---|
-| **GOLD** | **2.33** (T=0.52) | **1.42** (T=0.52) | **61%** | 40.76% | **S-Tier**: Highly Robust. |
-| **NIFTY** | **1.25** (T=0.49) | **0.84** (T=0.48) | **67%** | 7.62% | **A-Tier**: Selective Sniper. |
-| **USD/INR** | **-0.48** (T=0.50) | **-1.92** (T=0.46) | **0%** | 3.64% | **FAIL**: Friction Trap. |
+| Asset | Gross Sharpe (0 bps) | Net Sharpe (5 bps) | **Retention** | Coverage (%) |
+|---|---|---|---|---|
+| **GOLD** | **2.33** (T=0.52) | **1.42** (T=0.52) | **61%** | 40.76% |
+| **NIFTY** | **1.25** (T=0.49) | **0.84** (T=0.48) | **67%** | 7.62% |
+| **USD/INR** | **-0.48** (T=0.50) | **-1.92** (T=0.46) | **0%** | 3.64% |
 
 **Final Decision Matrix (for Master Backtest):**
 1.  **GOLD ($T=0.52$)**: LOCK. This is the cornerstone of the portfolio. 
 2.  **NIFTY ($T=0.48$)**: LOCK. High precision, low weight in the final equity curve.
 3.  **USD/INR**: **LIQUIDATED**. Removed from the final ensemble to protect portfolio Sharpe.
 
-**Next Steps:**
-- **Phase 11: Master Backtest**: Generate the final Equity Curves and Drawdown plots for the Nifty + Gold Dual-Engine.
-- **Forensic Portfolio Audit**: Check the correlation of returns between Nifty and Gold to confirm diversification.
-
 ---
 
-### 2026-04-04 — Phase 10.3: Forensic Audit — The "Efficiency Peak"
+### 2026-04-04 — The Efficiency Peak
 
 **What was done:**
 Upgraded the `src/threshold_optimizer.py` engine with institutional risk metrics: **Max Drawdown (MDD)** and the **Calmar Ratio** ($Sharpe / MDD$). Performed a simultaneous dual-friction audit (0 bps vs. 5 bps) to identify "Investability Peaks" rather than just raw Alpha Peaks.
@@ -731,19 +708,60 @@ Upgraded the `src/threshold_optimizer.py` engine with institutional risk metrics
 
 **Forensic Inferences:**
 
-1. **The Nifty "Efficiency Peak" Victory**:
+1. **Nifty**:
    While the "Alpha Peak" (Max Sharpe) for Nifty is at $T=0.48$ (Sharpe 0.84), moving just **$0.01$** in probability to **$T=0.49$** slashes the **Max Drawdown from 0.23 to 0.07 (a 70% reduction!)**.
    - I am trading a sliver of Sharpe for a massive boost in professional "investability."
    - The **8.71 Calmar** is the highest in the portfolio—this is the smoothest equity curve Nifty offers.
 
-2. **Gold as the S-Tier Anchor**:
+2. **Gold**:
    Gold remains the most robust engine in the portfolio. It only decayed from a 2.33 Gross Sharpe to a 1.42 Net, proving extreme resistance to transaction friction. The $T=0.52$ lock captures high alpha with a controlled $0.18$ MDD.
 
-3. **USD/INR Forensic Rejection**:
-   The transition to a 5-bps friction model has exposed USD/INR as a **Friction Trap.** Its thin alpha collapsed instantly under execution costs, leading to a $-2.41$ Net Sharpe. I have formally **pruned** this from the production engine.
-
-**Strategic Verdict for Master Backtest:**
-I am locking the portfolio into a Dual-Engine strategy: **Gold ($T=0.52$)** as the anchor and **Nifty ($T=0.49$)** as the Efficiency Sniper.
+3. **USD/INR**:
+   The transition to a 5-bps friction model has exposed USD/INR as a **Friction Trap.** Its thin alpha collapsed instantly under execution costs, leading to a $-2.41$ Net Sharpe.
 
 ---
+
+### 2026-04-04 — Master Backtest 
+
+**What was done:**
+Executed the definitive 2024–2025 Out–Of–Sample (OOS) master backtest using institutional-grade multiplicative compounding (**`cumprod`**) and **Dual-Sharpe** annualization (Daily vs. Trade-Frequency).
+
+**OOS Final Audit Results (2024-2025):**
+
+| Asset | Account Sharpe (`sqrt(252)`) | **Signal Sharpe** (`Refined`) | Max Drawdown (Comp.) | Calmar |
+|---|---|---|---|---|
+| **GOLD ($0.52$)** | **1.48** | **1.51** | **7.99%** | **1.87** |
+| **NIFTY ($0.49$)** | -0.48 | -0.48 | 15.57% | -0.43 |
+| **USD/INR ($0.50$)** | -0.80 | -0.80 | 4.97% | -0.56 |
+
+**Forensic Inferences:**
+
+1. **Gold**:
+   The refined **Signal Sharpe of 1.51** confirms that the Gold strategy is a pure skill-based engine. The entries are high-conviction, and the 1.48 Account Sharpe proves it is an investable portfolio asset. With a **7.99% Compounded MDD**, it is ready for institutional scaling.
+
+2. **Nifty & USD/INR**:
+   Both assets failed to produce positive alpha after 5-bps friction and multiplicative risk accounting. Nifty's -0.48 Sharpe in the OOS period confirms a **Regime Collision** where prior patterns failed to adapt to recent volatility.
+
+---
+
+### 2026-04-04 —  Monte Carlo Audit:
+
+**What was done:**
+Executed a 10,000-simulation Random Selection Audit (10,000 per asset) comparing the METR Meta-Filter against a random picker and the Signal-Only baseline for the 2024–2025 regime.
+
+**Statistical Audit Results (2024-2025 OOS):**
+
+| Asset | Model Sharpe | Baseline Sharpe | **P-Value** | **Percentile** | Result |
+|---|---|---|---|---|---|
+| **GOLD** | **1.21** | -0.73 | **0.0104** | **99.0th** | **SKILL** |
+| **NIFTY** | -0.40 | -0.63 | 0.4019 | 59.8th | NOISE |
+| **USD/INR** | -0.60 | -1.49 | 0.1237 | 87.6th | NOISE |
+
+**Forensic Conclusion:**
+
+1. **Gold — High Significance Skill**:
+   The Gold engine achieved a **99.0th percentile rank**, proving it is statistically superior to random selection. Most importantly, it transformed a **losing raw-signal baseline (-0.73)** into a **winning model**. This is the definitive "Proof of Value" for the METR Meta-Filter architecture.
+
+2. **Nifty & USD/INR — Luck Rejection**:
+   Neither asset demonstrated statistical significance. The Nifty model's 59.8th percentile rank confirms that a random picker picks better trades 40% of the time, making the Nifty alpha indistinguishable from luck.
 
