@@ -12,7 +12,7 @@ import numpy as np
 import yaml
 import joblib
 import os
-from sklearn.model_selection import TimeSeriesSplit, RandomizedSearchCV
+from sklearn.model_selection import TimeSeriesSplit, RandomizedSearchCV, cross_val_predict
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_auc_score, average_precision_score, classification_report
 import xgboost as xgb
@@ -25,7 +25,6 @@ with open(CONFIG_PATH) as f:
 EXP_FEATURES   = config.get("Exposure_Features", [])
 CROSS_FEATURES = config.get("Cross_Asset_Features", {})
 N_SPLITS       = config.get("N_Splits", 5)
-THRESHOLD_LIST = [0.50, 0.52, 0.55, 0.58]
 ASSETS = ["nifty", "gold", "usdinr"]
 
 # Ensure output directories exist
@@ -57,6 +56,12 @@ for asset in ASSETS:
     train = pl.read_parquet(f"data/processed/train/{asset}.parquet")
     test  = pl.read_parquet(f"data/processed/test/{asset}.parquet")
 
+    # SIGNAL MASKING
+    # The Meta-Filter only exists to judge actual signals.
+    # Stripping Signal == 0 removes noise and correctly centers the AUC on entry skill.
+    train = train.filter(pl.col("Signal") != 0)
+    test  = test.filter(pl.col("Signal") != 0)
+
     # Meta-Target: Meta_Label (1 = Win, 0 = Loss/Noise)
     y_train = train["Meta_Label"].to_pandas()
     y_test  = test["Meta_Label"].to_pandas()
@@ -67,7 +72,7 @@ for asset in ASSETS:
     X_train = train.select(available).to_pandas()
     X_test  = test.select(available).to_pandas()
 
-    print(f"   Shape: Train={X_train.shape[0]}, Test={X_test.shape[0]} | Features: {len(available)}")
+    print(f"   Signals Found: Train={X_train.shape[0]}, Test={X_test.shape[0]} | Features: {len(available)}")
     
     baseline_wr = y_test.mean()
 
@@ -94,23 +99,49 @@ for asset in ASSETS:
     search.fit(X_train, y_train)
     best_raw_model = search.best_estimator_
 
-    # --- Probability Calibration (Isotonic) ---
-    # Using 'prefit' to preserve the Best Estimator from RandomizedSearch
-    # Note: Fitting on X_train is slightly optimistic but acceptable for signal filtration.
+    # Out-Of-Fold (OOF) Probability Generation (TS-Safe)
+    print(f"   Generating Calibrated OOF probabilities for {asset}...")
+    
+    # Initialize OOF array with NaNs
+    oof_probs = np.full(X_train.shape[0], np.nan)
+    
+    # Manual loop to handle TimeSeriesSplit expanding windows
+    for train_idx, test_idx in tscv.split(X_train, y_train):
+        # Wrap raw model in isotopic calibration using internal CV for this split
+        fold_calib = CalibratedClassifierCV(best_raw_model, method='isotonic', cv=3)
+        fold_calib.fit(X_train.iloc[train_idx], y_train.iloc[train_idx])
+        
+        # Predict on the "Future" fold (Test Index)
+        oof_probs[test_idx] = fold_calib.predict_proba(X_train.iloc[test_idx])[:, 1]
+    
+    # SAVE VALIDATION BLOBS FOR SHARPE OPTIMIZER
+    val_blob = pl.DataFrame({
+        "OOF_Prob": oof_probs,
+        "Directional_Return": train["Directional_Return"]
+    })
+    # Filter out the early NaN points (they didn't participate in testing)
+    val_blob = val_blob.filter(pl.col("OOF_Prob").is_not_nan())
+    
+    val_blob.write_parquet(f"models/meta/{asset}_val_blob.parquet")
+    print(f"   Saved OOF Blob → models/meta/{asset}_val_blob.parquet ({val_blob.shape[0]} signals)")
+
+    # Probability Calibration (Isotonic)
     calibrated_model = CalibratedClassifierCV(
         best_raw_model, method='isotonic', cv='prefit'
     )
     calibrated_model.fit(X_train, y_train)
 
-    # --- Evaluation ---
+    # Evaluation
     # Probabilities of Meta_Label=1 (Signal Win)
     train_probs = calibrated_model.predict_proba(X_train)[:, 1]
     test_probs  = calibrated_model.predict_proba(X_test)[:, 1]
     
     train_auc = roc_auc_score(y_train, train_probs)
     test_auc  = roc_auc_score(y_test, test_probs)
-    ap_score  = average_precision_score(y_test, test_probs)
+    train_ap  = average_precision_score(y_train, train_probs)
+    test_ap   = average_precision_score(y_test, test_probs)
     auc_gap   = train_auc - test_auc
+    ap_gap    = train_ap - test_ap
 
     report_lines = []
     report_lines.append(f"============================================================")
@@ -120,32 +151,18 @@ for asset in ASSETS:
     report_lines.append(f"   Best CV AUPRC:     {search.best_score_:.4f}")
     report_lines.append(f"   Best Params:       {search.best_params_}")
     report_lines.append(f"\n   Train AUC: {train_auc:.4f} | Test AUC: {test_auc:.4f} | Gap: {auc_gap:.4f}")
-    report_lines.append(f"   Test AUPRC: {ap_score:.4f}")
+    report_lines.append(f"   Train AP:  {train_ap:.4f} | Test AP:  {test_ap:.4f} | Gap: {ap_gap:.4f}")
 
-    for thresh in THRESHOLD_LIST:
-        mask = test_probs >= thresh
-        trade_count = mask.sum()
-        
-        if trade_count > 0:
-            filtered_wr = y_test[mask].mean()
-            trade_frac  = trade_count / len(y_test)
-            diff = (filtered_wr - baseline_wr) * 100
-            
-            report_lines.append(f"\n   --- Metrics at Threshold: {thresh} ---")
-            report_lines.append(f"   Win Rate: {filtered_wr:.4f} | Trade Fraction: {trade_frac:.4f}")
-            report_lines.append(f"   Edge vs Baseline: {diff:+.2f}% ({trade_count} trades)")
-        else:
-            report_lines.append(f"\n   --- Metrics at Threshold: {thresh} ---")
-            report_lines.append(f"   Zero recall (No trades selected)")
-
-    # Save
+    # Save Report
     filename = f"reports/meta_filter/{asset}_xgb_report.txt"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as f:
         f.write("\n".join(report_lines))
     
     joblib.dump(calibrated_model, f"models/meta/{asset}_xgb_meta.joblib")
     
-    print(f"   AUC Stats: Train={train_auc:.4f} | Test={test_auc:.4f} | Gap={auc_gap:.4f}")
+    print(f"   AUC Trace: Train={train_auc:.4f} | Test={test_auc:.4f} | Gap={auc_gap:.4f}")
+    print(f"   AP  Trace: Train={train_ap:.4f} | Test={test_ap:.4f} | Gap={ap_gap:.4f}")
     print(f"   Saved Model  → models/meta/{asset}_xgb_meta.joblib")
     print(f"   Saved Report → {filename}")
     
