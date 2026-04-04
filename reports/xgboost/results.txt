@@ -3,7 +3,7 @@
   ASSET: NIFTY (Symmetric Meta-Filter)
 ============================================================
    Generating Calibrated OOF probabilities for nifty...
-
+   Saved Test Blob → nifty_test_blob.parquet (312 signals)
    AUC Trace: Train=0.6857 | Test=0.5918 | Gap=0.0939
    AP  Trace: Train=0.5797 | Test=0.4431 | Gap=0.1366
    [DONE] Artifacts saved 
@@ -12,7 +12,7 @@
   ASSET: GOLD (Symmetric Meta-Filter)
 ============================================================
    Generating Calibrated OOF probabilities for gold...
-
+   Saved Test Blob → gold_test_blob.parquet (302 signals)
    AUC Trace: Train=0.6853 | Test=0.5935 | Gap=0.0918
    AP  Trace: Train=0.6556 | Test=0.4602 | Gap=0.1954
    [DONE] Artifacts saved 
@@ -21,6 +21,7 @@
   ASSET: USDINR (Symmetric Meta-Filter)
 ============================================================
    Generating Calibrated OOF probabilities for usdinr...
+   Saved Test Blob → usdinr_test_blob.parquet (259 signals)
    AUC Trace: Train=0.7184 | Test=0.5489 | Gap=0.1695
    AP  Trace: Train=0.6132 | Test=0.4833 | Gap=0.1299
    [DONE] Artifacts saved 
