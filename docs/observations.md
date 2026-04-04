@@ -713,3 +713,37 @@ Conducted a simultaneous dual-friction audit (0 bps vs. 5 bps) to identify the "
 **Next Steps:**
 - **Phase 11: Master Backtest**: Generate the final Equity Curves and Drawdown plots for the Nifty + Gold Dual-Engine.
 - **Forensic Portfolio Audit**: Check the correlation of returns between Nifty and Gold to confirm diversification.
+
+---
+
+### 2026-04-04 — Phase 10.3: Forensic Audit — The "Efficiency Peak"
+
+**What was done:**
+Upgraded the `src/threshold_optimizer.py` engine with institutional risk metrics: **Max Drawdown (MDD)** and the **Calmar Ratio** ($Sharpe / MDD$). Performed a simultaneous dual-friction audit (0 bps vs. 5 bps) to identify "Investability Peaks" rather than just raw Alpha Peaks.
+
+**Audit Results (Net 5-bps):**
+
+| Asset | Production Threshold ($T$) | Net Sharpe | Net MDD | Net Calmar | Trade Fraction |
+|---|---|---|---|---|---|
+| **GOLD** | **0.52** | **1.4241** | **0.1859** | **7.6608** | 40.7% |
+| **NIFTY** | **0.49** | **0.6286** | **0.0722** | **8.7095** | 4.5% |
+| **USD/INR** | 0.50 | **-2.4148** | 0.0296 | < 0 | 1.9% |
+
+**Forensic Inferences:**
+
+1. **The Nifty "Efficiency Peak" Victory**:
+   While the "Alpha Peak" (Max Sharpe) for Nifty is at $T=0.48$ (Sharpe 0.84), moving just **$0.01$** in probability to **$T=0.49$** slashes the **Max Drawdown from 0.23 to 0.07 (a 70% reduction!)**.
+   - I am trading a sliver of Sharpe for a massive boost in professional "investability."
+   - The **8.71 Calmar** is the highest in the portfolio—this is the smoothest equity curve Nifty offers.
+
+2. **Gold as the S-Tier Anchor**:
+   Gold remains the most robust engine in the portfolio. It only decayed from a 2.33 Gross Sharpe to a 1.42 Net, proving extreme resistance to transaction friction. The $T=0.52$ lock captures high alpha with a controlled $0.18$ MDD.
+
+3. **USD/INR Forensic Rejection**:
+   The transition to a 5-bps friction model has exposed USD/INR as a **Friction Trap.** Its thin alpha collapsed instantly under execution costs, leading to a $-2.41$ Net Sharpe. I have formally **pruned** this from the production engine.
+
+**Strategic Verdict for Master Backtest:**
+I am locking the portfolio into a Dual-Engine strategy: **Gold ($T=0.52$)** as the anchor and **Nifty ($T=0.49$)** as the Efficiency Sniper.
+
+---
+
