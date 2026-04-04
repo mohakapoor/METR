@@ -1,0 +1,33 @@
+
+   GOLD:
+      Trades: 59 | Win Rate: 66.1% | Model Sharpe: 1.21 | Baseline: -0.73
+      ─────────────────────────────────────────────────────
+      Test                    Statistic    P-value   Result
+      ─────────────────────────────────────────────────────
+      Monte Carlo (10,000)    Target 1.21   0.0104   Y
+      T-test (mean return)    t= 1.62      0.1099   N
+      Binomial (win rate)     W=39/59       0.0092   Y
+      Kupiec (reliability)    LR Calc       0.0126   Y
+      ─────────────────────────────────────────────────────
+
+   NIFTY:
+      Trades: 204 | Win Rate: 50.5% | Model Sharpe: -0.40 | Baseline: -0.63
+      ─────────────────────────────────────────────────────
+      Test                    Statistic    P-value   Result
+      ─────────────────────────────────────────────────────
+      Monte Carlo (10,000)    Target -0.40   0.4019   N
+      T-test (mean return)    t=-0.53      0.5943   N
+      Binomial (win rate)     W=103/204       0.4721   N
+      Kupiec (reliability)    LR Calc       0.8886   N
+      ─────────────────────────────────────────────────────
+
+   USDINR:
+      Trades: 151 | Win Rate: 51.7% | Model Sharpe: -0.60 | Baseline: -1.49
+      ─────────────────────────────────────────────────────
+      Test                    Statistic    P-value   Result
+      ─────────────────────────────────────────────────────
+      Monte Carlo (10,000)    Target -0.60   0.1237   N
+      T-test (mean return)    t=-0.80      0.4242   N
+      Binomial (win rate)     W=78/151       0.3725   N
+      Kupiec (reliability)    LR Calc       0.6841   N
+      ─────────────────────────────────────────────────────
