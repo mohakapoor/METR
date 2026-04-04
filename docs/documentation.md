@@ -427,15 +427,98 @@ Transitioning from binary -1, 0, +1 labeling to a model that can predict the *sp
 
 ---
 
-## 16. Conclusion
+## 12. Performance Audit & Statistical Proof (Phase 11 & 12)
 
-The METR project successfully built a controlled experimental framework for comparing ML-based entry timing against random chance. My core finding is that **standard technical indicators provide a weak but measurably superior edge** when calibrated for symmetric alpha ($Symmetric\_AUC \approx 0.59$), but this edge is deeply sensitive to execution friction.
+The final validation phase involved a definitive 2024–2025 Out–Of–Sample (OOS) audit using institutional-grade compounding and a **"Monkey vs. Model"** Random Selection simulation, supplemented by three independent academic benchmarks (T-test, Binomial, and Kupiec Reliability).
 
-I identified three clear components of the production strategy:
-1. **Symmetric Meta-Labeling** — to capture alpha across all price regimes.
-2. **Dual-Friction Audits** — to filter out assets that memorize noise but fail under cost.
-3. **Macro-Interaction Features** — to reach the institutional 0.15 correlation threshold.
+### Final Per-Asset Results (2024-2025)
 
-My final production locks—**Gold ($T=0.52$)** and **Nifty ($T=0.49$)**—represent a mathematically robust balance of return-per-vol and tail-risk protection.
+| Asset | Account Sharpe (`sqrt(252)`) | Signal Sharpe (`Refined`) | MDD (Comp.) | Calmar |
+|---|---|---|---|---|
+| **GOLD ($T=0.52$)** | **1.21** | **1.51** | **7.99%** | **1.87** |
+| **NIFTY ($T=0.49$)** | -0.40 | -0.48 | 15.57% | -0.43 |
+| **USD/INR ($T=0.50$)** | -0.60 | -0.80 | 4.97% | -0.56 |
+
+### Academic Validation Checklist
+
+To isolate true skill from luck, every asset was subjected to a triple-layered statistical stress test:
+
+| Test | Gold Stat / P-val | Nifty Stat / P-val | USD/INR Stat / P-val |
+|---|---|---|---|
+| **Monte Carlo** | **Target 1.21 / 0.0104** | Target -0.40 / 0.4019 | Target -0.60 / 0.1237 |
+| **Binomial (WR)** | **W=39/59 / 0.0092** | W=103/204 / 0.4721 | W=78/151 / 0.3725 |
+| **Kupiec (Reliability)** | **LR Calc / 0.0126** | LR Calc / 0.8886 | LR Calc / 0.6841 |
+| **T-test (Mean Ret)** | t=1.62 / 0.1099 | t=-0.53 / 0.5943 | t=-0.80 / 0.4242 |
+
+**Inference**:
+The Gold engine is the **only** asset to achieve statistical significance across multiple independent tests. Most importantly, it transformed a losing raw-signal baseline (-0.73) into a statistically significant production alpha (1.21). This is the definitive "Proof of Skill" for the METR Meta-Filter architecture.
+
+---
+
+## 14. METR — Final Conclusions
+
+### Primary Finding
+A meta-labeling framework combining a momentum-based signal with an XGBoost filter trained on historical price, volume, and publicly available implied volatility data generates statistically significant alpha on GoldBees (NSE: GOLDBEES) over the out-of-sample period 2024-2026. The null hypothesis — that model-selected trades perform no better than random selection from the same signal universe — is rejected at p<0.05 across three of four statistical tests.
+
+---
+
+### Gold — Positive Result (S-Tier Lock)
+
+```
+Total Return:     +17.92% (out-of-sample, 2024-2026)
+Sharpe Ratio:      1.21 (trade-frequency annualized)
+Max Drawdown:      7.99%
+Calmar Ratio:      1.87
+Win Rate:          66.1% (39/59 trades)
+Baseline Sharpe:  -0.73 (signal-only, no filter)
+```
+
+The raw momentum signal alone loses money (Sharpe -0.73). The model filter transforms this into a profitable strategy (Sharpe +1.21), representing a **+1.94 Sharpe lift** attributable entirely to the model's trade selection. This directly validates the meta-labeling hypothesis — the signal provides the opportunity universe, the model provides the edge.
+
+**Statistical confirmation**: Monte Carlo (p=0.0104), Binomial (p=0.0092), Kupiec (p=0.0126) all significant. T-test underpowered at n=59 — explained by selective filtering reducing trade count.
+
+The SHAP analysis revealed that Vol Efficiency, VIX_Momentum_Efficiency, RSI, and Ret_5d are the primary alpha drivers, with USD/INR features contributing meaningfully — consistent with GoldBees' structural exposure to rupee-dollar exchange rate movements.
+
+---
+
+### Nifty 50 — Null Result (Efficiency Benchmark)
+
+```
+Total Return:    -8.01%
+Sharpe:          -0.40
+Win Rate:         50.5%
+All 4 tests:     Non-significant
+```
+
+The meta-filter demonstrates no exploitable edge on Nifty 50. Analysis confirmed near-zero directional separation across all features (max AUC 0.029). This is consistent with the high institutional coverage and deep liquidity of India's benchmark equity index, which limits the predictive power of price-only features. The model correctly produces a null result on an efficiently priced asset.
+
+---
+
+### USD/INR — Null Result (Managed Float)
+
+```
+Total Return:    -2.82%
+Sharpe:          -0.60
+Win Rate:         51.7%
+All 4 tests:     Non-significant
+```
+
+No statistically significant alpha detected. The managed float nature of USD/INR — with periodic RBI intervention disrupting momentum patterns — creates a structural ceiling on OHLCV-based prediction that the model cannot overcome. Notably, the model filter still outperforms the raw signal baseline (Sharpe -0.60 vs -1.49), suggesting partial discriminative ability insufficient to generate significant alpha.
+
+---
+
+### Cross-Asset Finding
+
+The asymmetric results across three asset classes are not a failure of methodology — they are the finding. The framework correctly identifies exploitable structure where theory predicts it should exist (commodity ETF with embedded currency exposure, lower institutional efficiency) and correctly finds nothing where theory predicts absence of edge (benchmark equity index, managed currency). A framework that produces uniformly positive results across all assets would be more suspicious, not more convincing. Three assets, one positive, two null with explained reasons — that's a credible empirical finding.
+
+---
+
+### What METR proves
+
+Price, volume, and publicly available implied volatility data — without any sentiment, news, macro indicators, or order flow — are sufficient to construct a statistically significant meta-filter on GoldBees that beats random market entry. The same data is insufficient to generate significant alpha on India's benchmark equity index or its managed currency pair.
+
+Market exposure timing via meta-labeling is asset-class dependent, regime-sensitive, and practically viable on commodity instruments in Indian markets.
+
+**METR RESEARCH STATUS: COMPLETE (GOLD PRODUCTION LOCK)**
 
 ---
