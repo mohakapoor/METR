@@ -1,10 +1,8 @@
 """
-train_trade_filter.py — Phase 8.5: Calibrated Meta-Labeling (XGBoost)
-=====================================================================
-- Objective: Predict Meta_Label (1 if Signal matches TB_Label, 0 otherwise)
-- Logic: Isotonic Calibration + Stability Constraints (Gamma, min_child_weight)
-- Metrics: Overfitting Gap (Train vs Test AUC) + Threshold Sweep
-- Outputs: models/meta/*.joblib and reports/meta_filter/*.txt
+Trade Filtering Model
+=====================
+- Only execute when Signal is there 
+- Calc AUCROC and AUC
 """
 
 import polars as pl
@@ -24,23 +22,20 @@ with open(CONFIG_PATH) as f:
 
 EXP_FEATURES   = config.get("Exposure_Features", [])
 CROSS_FEATURES = config.get("Cross_Asset_Features", {})
-N_SPLITS       = config.get("N_Splits", 5)
+N_SPLITS = config.get("N_Splits", 5)
 ASSETS = ["nifty", "gold", "usdinr"]
 
-# Ensure output directories exist
-os.makedirs("models/meta", exist_ok=True)
-os.makedirs("reports/meta_filter", exist_ok=True)
 
 # -- Hyperparameter Space 
 param_grid = {
     "max_depth":        [2,3],
     "learning_rate":    [0.02, 0.03, 0.05, 0.1],
     "n_estimators":     [100, 125,150,],
-    "reg_lambda":       [1, 10, 20, 50, 100], 
-    "min_child_weight": [5, 10, 20],      # Stability Constraint
-    "gamma":            [0.1,  0.5,1.0],  # Pruning Constraint
+    "reg_lambda":       [1, 10, 20, 50, 100],
+    "min_child_weight": [5, 10, 20],
+    "gamma":            [0.1,  0.5,1.0],
     "subsample":        [0.8, 0.9],
-    "colsample_bytree": [0.8, 0.9]
+    "colsample_bytree": [0.8, 0.9],
 }
 
 
@@ -48,17 +43,15 @@ param_grid = {
 tscv = TimeSeriesSplit(n_splits=N_SPLITS)
 
 for asset in ASSETS:
-    print(f"\n{'='*60}")
-    print(f"  ASSET: {asset.upper()} (Calibrated XGBoost Meta-Filter)")
-    print(f"{'='*60}")
+    print(f"\n{'='*50}")
+    print(f"  ASSET: {asset.upper()}")
+    print(f"{'='*50}")
 
     # Load data
     train = pl.read_parquet(f"data/processed/train/{asset}.parquet")
     test  = pl.read_parquet(f"data/processed/test/{asset}.parquet")
 
     # SIGNAL MASKING
-    # The Meta-Filter only exists to judge actual signals.
-    # Stripping Signal == 0 removes noise and correctly centers the AUC on entry skill.
     train = train.filter(pl.col("Signal") != 0)
     test  = test.filter(pl.col("Signal") != 0)
 
@@ -99,29 +92,25 @@ for asset in ASSETS:
     search.fit(X_train, y_train)
     best_raw_model = search.best_estimator_
 
-    # Out-Of-Fold (OOF) Probability Generation (TS-Safe)
-    print(f"   Generating Calibrated OOF probabilities for {asset}...")
-    
-    # Initialize OOF array with NaNs
+    # Out-Of-Fold  Probability Generation    
     oof_probs = np.full(X_train.shape[0], np.nan)
     
-    # Manual loop to handle TimeSeriesSplit expanding windows
+    # TimeSeriesSplit
     for train_idx, test_idx in tscv.split(X_train, y_train):
-        # Wrap raw model in isotopic calibration using internal CV for this split
         fold_calib = CalibratedClassifierCV(best_raw_model, method='isotonic', cv=3)
         fold_calib.fit(X_train.iloc[train_idx], y_train.iloc[train_idx])
         
-        # Predict on the "Future" fold (Test Index)
+        # Predict on the "Future" fold
         oof_probs[test_idx] = fold_calib.predict_proba(X_train.iloc[test_idx])[:, 1]
     
     # SAVE VALIDATION BLOBS FOR SHARPE OPTIMIZER
     val_blob = pl.DataFrame({
         "OOF_Prob": oof_probs,
-        "Directional_Return": train["Directional_Return"]
+        "Directional_Return": train["Directional_Return"],
+        "Date": train["Date"],
     })
-    # Filter out the early NaN points (they didn't participate in testing)
+    # Filter out NaN points 
     val_blob = val_blob.filter(pl.col("OOF_Prob").is_not_nan())
-    
     val_blob.write_parquet(f"models/meta/{asset}_val_blob.parquet")
     print(f"   Saved OOF Blob → models/meta/{asset}_val_blob.parquet ({val_blob.shape[0]} signals)")
 
@@ -132,10 +121,18 @@ for asset in ASSETS:
     calibrated_model.fit(X_train, y_train)
 
     # Evaluation
-    # Probabilities of Meta_Label=1 (Signal Win)
     train_probs = calibrated_model.predict_proba(X_train)[:, 1]
     test_probs  = calibrated_model.predict_proba(X_test)[:, 1]
     
+    # SAVE TEST BLOBS
+    test_blob = pl.DataFrame({
+        "OOF_Prob": test_probs,
+        "Directional_Return": test["Directional_Return"],
+        "Date": test["Date"]
+    })
+    test_blob.write_parquet(f"models/meta/{asset}_test_blob.parquet")
+    print(f"   Saved Test Blob → models/meta/{asset}_test_blob.parquet ({test_blob.shape[0]} signals)")
+
     train_auc = roc_auc_score(y_train, train_probs)
     test_auc  = roc_auc_score(y_test, test_probs)
     train_ap  = average_precision_score(y_train, train_probs)
@@ -144,9 +141,9 @@ for asset in ASSETS:
     ap_gap    = train_ap - test_ap
 
     report_lines = []
-    report_lines.append(f"============================================================")
-    report_lines.append(f"  ASSET: {asset.upper()} (Calibrated XGBoost Meta-Filter)")
-    report_lines.append(f"============================================================")
+    report_lines.append(f"======================================")
+    report_lines.append(f"  ASSET: {asset.upper()} Train Filter ")
+    report_lines.append(f"======================================")
     report_lines.append(f"   Baseline Win Rate: {baseline_wr:.4f}")
     report_lines.append(f"   Best CV AUPRC:     {search.best_score_:.4f}")
     report_lines.append(f"   Best Params:       {search.best_params_}")
