@@ -9,7 +9,6 @@ ASSETS = ["nifty", "gold", "usdinr"]
 FRICTIONS = [0.0, 0.0005]  # 0 bps (Gross) and 5 bps (Net)
 THRESHOLD_RANGE = np.arange(0.45, 0.61, 0.01)
 
-# Professional Polars Rendering for Institutional Logs
 pl.Config.set_tbl_width_chars(160)
 pl.Config.set_fmt_str_lengths(20)
 pl.Config.set_tbl_rows(100)
@@ -24,7 +23,7 @@ def calculate_sharpe(returns):
     return (mean_ret / std_ret) * np.sqrt(252)
 
 def calculate_mdd(returns):
-    """Forensic Max Drawdown calculation"""
+    #Max Drawdown calculation
     if len(returns) < 5:
         return 0.0
     cum_ret = np.cumsum(returns)
@@ -43,8 +42,7 @@ def plot_dual_sweep(df_0, df_5, asset):
     ax1.set_xlabel('Probability Threshold', fontsize=12)
     ax1.set_ylabel('Annualized Sharpe Ratio', fontsize=12, color='#1f77b4')
     ax1.grid(True, alpha=0.2)
-    
-    # Identify the Net Alpha peak for visual annotation
+
     idx_pk = df_5["sharpe"].arg_max()
     pk_thr = df_5["threshold"][idx_pk]
     pk_sha = df_5["sharpe"][idx_pk]
@@ -54,13 +52,13 @@ def plot_dual_sweep(df_0, df_5, asset):
 
     ax1.legend(loc='upper left')
     
-    # Secondary Axis: Calmar Ratio (Institutional Risk-Reward)
+    # Secondary Axis: Calmar Ratio
     ax2 = ax1.twinx()
     ax2.plot(df_5["threshold"], df_5["calmar"], marker='x', color='#2ca02c', label='Calmar (5 bps)', alpha=0.6, linewidth=1.5)
     ax2.set_ylabel('Calmar Ratio (Risk-Adjusted)', color='#2ca02c', fontsize=12)
     ax2.tick_params(axis='y', labelcolor='#2ca02c')
     
-    plt.title(f'METR - {asset.upper()} Forensic Friction Audit (Gross vs. Net)', fontsize=14)
+    plt.title(f'METR - {asset.upper()} Friction Audit (Gross vs. Net)', fontsize=14)
     plt.tight_layout()
     
     plot_path = f"reports/threshold_optimization/{asset}_friction_sensitivity.png"
