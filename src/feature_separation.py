@@ -4,7 +4,7 @@ import yaml
 import os
 from sklearn.metrics import roc_auc_score
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# Config
 CONFIG_PATH = "config.yaml"
 if not os.path.exists(CONFIG_PATH):
     print(f"Error: {CONFIG_PATH} not found.")
@@ -46,8 +46,6 @@ for asset in ASSETS:
     results = []
     for f in features:
         vals = df_meta[f].to_numpy()
-        
-        # Handle NaNs/Infs
         mask = np.isfinite(vals)
         if mask.sum() < 10:
             continue
@@ -65,7 +63,6 @@ for asset in ASSETS:
         except ValueError:
             continue
 
-    # Sort by separation
     top_5 = sorted(results, key=lambda x: x["separation"], reverse=True)[:5]
 
     print(f"ASSET: {asset.upper()}")
@@ -78,5 +75,3 @@ for asset in ASSETS:
         for r in top_5:
             print(f"{r['feature']:25s} | {r['auc']:6.3f} | {r['separation']:10.3f} | {r['direction']}")
     print("\n")
-
-print("Analysis Complete.")
