@@ -141,7 +141,7 @@ n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
 
 ---
 
-### Model v3 — Symmetric Alpha (Phase 10.2)
+### Model v3 — Directional Returns
 
 **Key Innovations:**
 1. **Side-Aware P&L**: I switched from raw `TB_Return` to `Directional_Return = TB_Return * Signal`. 
@@ -183,7 +183,7 @@ n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
 
 ## 5. Feature Importance Analysis (Per-Asset Audit)
 
-The introduction of **Macro-Interactors (Phase 8)** has revealed that alpha drivers are highly asset-specific. Below is my forensic breakdown of the Top 3 drivers for each production engine.
+The introduction of **Macro-Interactors** has revealed that alpha drivers are highly asset-specific. Below is my forensic breakdown of the Top 3 drivers for each production engine.
 
 ### 5.1 Nifty 50 (Equities)
 *The Nifty engine is primarily driven by Relative Strength and Volatility regimes.*
@@ -324,7 +324,7 @@ The following features are synthesized in `src/feature_eng.py` and `src/feature_
 - **`RSI_Trend`**: `RSI * Ret_5d`. A high-conviction interaction identifying "overbought but strong" vs. "overbought and weak" regimes.
 - **`Gap_Intraday_Conviction`**: `Gap * Intraday_Return`. Identifies sessions where overnight sentiment and intraday action align for a powerful trend.
 
-### 10.4 Cross-Asset Dynamics (Phase 8 Macro-Signals)
+### 10.4 Cross-Asset Dynamics 
 - **`Relative Strength (RS)`**: `Gold_Ret_5d - Nifty_Ret_5d`. Measures risk-appetite shifts.
 - **`Usdinr_Stress_Filter`**: `Risk_Off * Nifty_Vol_Ratio`. A state-aware interaction that identifies when Indian equity stress (rising vol) aligns with a global risk-off flight. This is the project's strongest macro-filter.
 - **`Cross_Vol_Ratio`**: `Nifty_Vol_20d / Gold_Vol_20d`. Measures the volatility divergence between equities and safe-havens, identifying high-regime shifts.
@@ -339,7 +339,7 @@ The following features are synthesized in `src/feature_eng.py` and `src/feature_
 
 ---
 
-## 11. Threshold Optimization (Phase 10.3)
+## 11. Threshold Optimization 
 *(Dual-Friction Audit: 0 bps vs. 5 bps)*
 
 To bridge the gap between "Research Alpha" and "Production Alpha," I performed a forensic grid search across all thresholds $T \in [0.45, 0.60]$. The goal was to maximize **Net Calmar** (Alpha Efficiency) while monitoring **Friction Decay**.
@@ -354,22 +354,24 @@ I tested the strategy against a standard institutional friction of **5 basis poi
 | **USD/INR** | 0.50 | **-2.41** | 0.03 | < 0 | **REJECTED** |
 
 ### 11.2 Strategic Victory: The Nifty Efficiency Shift
-I have identified that while Nifty achieves its "Alpha Peak" at $T=0.48$, the **"Efficiency Peak" occurs at $T=0.49$.** Moving just 0.01 in probability slashes the **Max Drawdown from 0.23 to 0.07 (a 70% reduction)**. This is my primary engineering victory for Phase 10.3.
+I have identified that while Nifty achieves its "Alpha Peak" at $T=0.48$, the **"Efficiency Peak" occurs at $T=0.49$.** Moving just 0.01 in probability slashes the **Max Drawdown from 0.23 to 0.07 (a 70% reduction)**. This is my primary engineering victory for right now.
+
+---
+## 12. Macro-Stabilization 🏆
+
+The project successfully navigated the Overfitting Crisis by pivoting from price-only technicals to global macro-regime context. This transition transformed the filters from "black boxes" into logic-driven engines that understand and adapt to market stress.
+
+- **Stabilizing the Gap**: By identifying a specific regularization grid (depth 3-5, min-child 5-10), I slashed the USD/INR "Memorization Gap" from 0.44 to 0.17 without losing the signal.
+- **Macro-Injection**: I bridged the "Interaction Wall" by injecting **Nifty Volatility** and **Gold Performance** into the FX and Gold models. The engine now recognizes that Gold's momentum is only "real" when equities are under structural stress.
+- **The Alpha Peak**: These refinements unlocked a **+10.7% Edge** on high-conviction trades, proving that cross-asset context is the primary driver of predictive accuracy.
+- **Root Cause Audit**: SHAP values confirmed that the **`Usdinr_Stress_Filter`** (Panic * Risk-Off) is the fundamental source of outperformance, effectively acting as a "Chaos Detector" for the portfolio.
 
 ---
 
-## 12. Project Evolution: Phase 8 Macro-Stabilization 🏆
-
-The project has successfully navigated the **"Overfitting Crisis"** and is now locked in its **Final Production Build**. 
-
-- **Phase 8.5 (The Sweet Spot)**: I identified the optimal regularization grid (`max_depth: [3,4,5]`, `min_child_weight: [5,10]`) that slashed the USDINR "Memorization Gap" from **0.44 to 0.17**.
-- **Phase 8.6 (Macro-Injection)**: I successfully bridged the "Interaction Wall" by injecting **Nifty Volatility** and **Gold Performance** into my USDINR meta-model.
-- **Phase 8.7 (The Alpha Peak)**: I achieved a finalized production benchmark of **+10.74% Edge** on Gold and USDINR.
-- **Phase 8.8 (Final Audit)**: I confirmed that **Volatility Efficiency** and the **Usdinr_Stress_Filter** are the primary drivers of my strategy outperformance.
 
 ---
 
-## 13. Final Production Standings (Phase 10.3)
+## 13. Final Production Standings
 
 Approved metrics at the **Optimized Efficiency Thresholds**:
 
@@ -380,11 +382,11 @@ Approved metrics at the **Optimized Efficiency Thresholds**:
 | **USDINR** | — | 0.5489 | < 0 | < 0 | **REJECTED** |
 
 ### Strategic Verdict
-I have successfully decoupled win-probability from market noise. The USDINR rejection is a **"Risk Management Premium"**—proving that institutional models must be robust to friction before being greenlit for production. My production portfolio is now limited to high-conviction, low-drawdown engines.
+I have successfully decoupled win-probability from market noise. The USDINR rejection is a **"Risk Management "**—proving that institutional models must be robust to friction before being greenlit for production. My production portfolio is now limited to high-conviction, low-drawdown engines.
 
 ---
 
-## 14. Regime Conditioning (Phase 9) — REJECTED
+## 14. Regime Conditioning — REJECTED
 *(Empirical Integrity Audit)*
 
 My attempts to integrate a **GaussianHMM** (Hidden Markov Model) to explicitly define "Crisis states" were **rejected** for inclusion in the final build. The HMM added significant complexity without outperforming the simpler, more stable **VIX_Shock** and **Nifty_Vol** indicators already present in the XGBoost architecture.
@@ -427,7 +429,7 @@ Transitioning from binary -1, 0, +1 labeling to a model that can predict the *sp
 
 ---
 
-## 12. Performance Audit & Statistical Proof (Phase 11 & 12)
+## 12. Performance Audit & Statistical Proof
 
 The final validation phase involved a definitive 2024–2025 Out–Of–Sample (OOS) audit using institutional-grade compounding and a **"Monkey vs. Model"** Random Selection simulation, supplemented by three independent academic benchmarks (T-test, Binomial, and Kupiec Reliability).
 
