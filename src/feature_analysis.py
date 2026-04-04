@@ -68,7 +68,7 @@ for asset in ASSETS:
 
     print(f"\n  Feature Importance (Gain):")
     max_gain = max(feat_vals) if feat_vals else 1
-    for name, val in feat_order[:15]: # Show top 15
+    for name, val in feat_order[:15]: # Show top 15 in terminal for context
         bar = "█" * int(val / max_gain * 30)
         print(f"    {name:25s} {val:8.2f}  {bar}")
 
@@ -84,29 +84,32 @@ for asset in ASSETS:
 
     print(f"\n  Correlation with Win (Meta_Label=1):")
     sorted_corrs = sorted(corrs.items(), key=lambda x: abs(x[1]), reverse=True)
-    for feat, r in sorted_corrs[:10]:
+    for feat, r in sorted_corrs[:10]: 
         print(f"    {feat:25s} {r:+8.4f}")
 
     # 3. Plot 
-    fig, axes = plt.subplots(1, 2, figsize=(18, max(8, len(available) * 0.35)))
-    fig.suptitle(f"Phase 8 Analysis — {asset.upper()} (Meta-Filter)", fontsize=14, fontweight="bold")
+    plot_n = 15
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    fig.suptitle(f"Phase 8 Analysis — {asset.upper()} (Top {plot_n} Meta-Drivers)", fontsize=14, fontweight="bold")
 
-    # Left: Gain importance
+    # Left: Gain importance (Top 15)
     ax = axes[0]
-    colors = ["#4CAF50" if v > np.median(feat_vals) else "#90CAF9" for v in feat_vals[:len(available)][::-1]]
-    ax.barh(feat_names[:len(available)][::-1], feat_vals[:len(available)][::-1], color=colors)
-    ax.set_title("Alpha Source: Feature Importance (Gain)", fontweight="bold")
+    top_names = feat_names[:plot_n]
+    top_vals  = feat_vals[:plot_n]
+    colors = ["#4CAF50" for _ in range(len(top_vals))]
+    ax.barh(top_names[::-1], top_vals[::-1], color=colors)
+    ax.set_title("Alpha Source: Importance (Gain)", fontweight="bold")
     ax.set_xlabel("Gain")
 
-    # Right: Correlation with Meta_Label
+    # Right: Correlation (Top 15)
     ax = axes[1]
-    sorted_feats = [f[0] for f in sorted_corrs]
-    sorted_vals  = [f[1] for f in sorted_corrs]
+    top_corr_names = [f[0] for f in sorted_corrs[:plot_n]]
+    top_corr_vals  = [f[1] for f in sorted_corrs[:plot_n]]
     
-    colors = ["#2ecc71" if r > 0 else "#e74c3c" for r in sorted_vals[::-1]]
-    ax.barh(sorted_feats[::-1], sorted_vals[::-1], color=colors)
-    ax.set_title("Alpha Direction: Correlation with Win", fontweight="bold")
-    ax.set_xlabel("Correlation coefficient (r)")
+    colors = ["#2ecc71" if r > 0 else "#e74c3c" for r in top_corr_vals[::-1]]
+    ax.barh(top_corr_names[::-1], top_corr_vals[::-1], color=colors)
+    ax.set_title("Alpha Direction: Correlation", fontweight="bold")
+    ax.set_xlabel("r")
     ax.axvline(0, color="black", linewidth=0.8)
 
     plt.tight_layout()
@@ -115,17 +118,22 @@ for asset in ASSETS:
     plt.close()
     print(f"\n  ✅ Saved → {out}")
 
-    # Append to summary file
-    summary_path = f"{REPORT_DIR}/summary.txt"
+    # 4. Append to Forensic Log (ALL results)
+    summary_path = f"{REPORT_DIR}/log.txt"
     with open(summary_path, "a") as sf:
-        sf.write(f"\nASSET: {asset.upper()}\n")
-        sf.write(f"{'-'*30}\n")
-        sf.write("Top 5 by Gain (Importance):\n")
-        for name, val in feat_order[:5]:
-            sf.write(f"  - {name:20s}: {val:.2f}\n")
-        sf.write("\nTop 5 by Correlation ( r ):\n")
-        for name, val in sorted_corrs[:5]:
-            sf.write(f"  - {name:20s}: {val:.4f}\n")
+        sf.write(f"\n{'='*60}\n")
+        sf.write(f"ASSET: {asset.upper()} | FULL AUDIT\n")
+        sf.write(f"{'='*60}\n\n")
+        
+        sf.write("1. FEATURE IMPORTANCE (GAIN) - FULL SET:\n")
+        sf.write(f"{'-'*40}\n")
+        for name, val in feat_order:
+            sf.write(f"  - {name:25s}: {val:10.4f}\n")
+            
+        sf.write("\n2. ALPHA DIRECTION (CORRELATION) - FULL SET:\n")
+        sf.write(f"{'-'*40}\n")
+        for name, val in sorted_corrs:
+            sf.write(f"  - {name:25s}: {val:+10.6f}\n")
         sf.write("\n")
 
 print("\nPhase 8 analysis complete.")
