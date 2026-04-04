@@ -1,7 +1,6 @@
 """
-train_baseline.py — Institutional Symmetric Baseline for Meta-Labeling
+train_baseline.py 
 =================================================================
-- Goal: Provide a linear baseline to compare against the XGBoost Meta-Filter.
 - Standard: Signal-Conditional (+1/-1/0) & Symmetric Alpha.
 - Metrics: AUC and AUPRC (Average Precision).
 """
@@ -21,14 +20,10 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 CONFIG_PATH = "config.yaml"
 with open(CONFIG_PATH) as f:
     config = yaml.safe_load(f)
-
 EXP_FEATURES   = config.get("Exposure_Features", [])
 CROSS_FEATURES = config.get("Cross_Asset_Features", {})
 N_SPLITS       = config.get("N_Splits", 5)
 ASSETS = ["nifty", "gold", "usdinr"]
-
-os.makedirs("models/baseline", exist_ok=True)
-os.makedirs("reports/baseline", exist_ok=True)
 
 global_log = []
 
@@ -49,24 +44,21 @@ for asset in ASSETS:
     global_log.append(f"  ASSET: {asset.upper()} (Symmetric Baseline)")
     global_log.append(f"{'='*60}")
 
-    try:
-        train = pl.read_parquet(f"data/processed/train/{asset}.parquet")
-        test  = pl.read_parquet(f"data/processed/test/{asset}.parquet")
 
-        # [SIGNAL MASKING]
-        train = train.filter(pl.col("Signal") != 0)
-        test  = test.filter(pl.col("Signal") != 0)
+    train = pl.read_parquet(f"data/processed/train/{asset}.parquet")
+    test  = pl.read_parquet(f"data/processed/test/{asset}.parquet")
 
-        y_train = train["Meta_Label"].to_pandas()
-        y_test  = test["Meta_Label"].to_pandas()
-        
-        features = EXP_FEATURES + CROSS_FEATURES.get(asset, [])
-        available = [f for f in features if f in train.columns]
-        X_train  = train.select(available).to_pandas()
-        X_test   = test.select(available).to_pandas()
-    except Exception as e:
-        print(f"   [SKIP] {asset}: {e}")
-        continue
+    # [SIGNAL MASKING]
+    train = train.filter(pl.col("Signal") != 0)
+    test  = test.filter(pl.col("Signal") != 0)
+
+    y_train = train["Meta_Label"].to_pandas()
+    y_test  = test["Meta_Label"].to_pandas()
+    
+    features = EXP_FEATURES + CROSS_FEATURES.get(asset, [])
+    available = [f for f in features if f in train.columns]
+    X_train  = train.select(available).to_pandas()
+    X_test   = test.select(available).to_pandas()
 
     # Model Pipeline
     pipe = Pipeline([
@@ -82,7 +74,7 @@ for asset in ASSETS:
     search.fit(X_train, y_train)
     best_raw_model = search.best_estimator_
 
-    # [TS-SAFE] Out-Of-Fold (OOF) Probability Generation
+    # Out-Of-Fold (OOF) Probability Generation
     print(f"   Generating Calibrated OOF probabilities for {asset}...")
     oof_probs = np.full(X_train.shape[0], np.nan)
     
@@ -96,7 +88,7 @@ for asset in ASSETS:
     val_blob = val_blob.filter(pl.col("OOF_Prob").is_not_nan())
     val_blob.write_parquet(f"models/baseline/{asset}_val_blob.parquet")
 
-    # Final Production Model (Calibrated)
+    # Final Production Model
     calibrated_model = CalibratedClassifierCV(
         best_raw_model, 
         method='isotonic', 
@@ -129,5 +121,3 @@ for asset in ASSETS:
 log_path = "reports/baseline/results.txt"
 with open(log_path, "w") as f:
     f.write("\n".join(global_log))
-
-print(f"\nBaseline Training Complete.")
