@@ -1,0 +1,12 @@
+--- METR PER-ASSET BACKTEST LOG ---
+Period: 2024 - 2025 (Out of Sample)
+
+[NIFTY] T=0.49
+   Total Ret: -0.0801 | Acc Sharpe: -0.48 | Sig Sharpe: -0.48 | MDD: 0.1557 | Calmar: -0.43
+
+[GOLD] T=0.52
+   Total Ret: 0.1792 | Acc Sharpe: 1.48 | Sig Sharpe: 1.51 | MDD: 0.0799 | Calmar: 1.87
+
+[USDINR] T=0.5
+   Total Ret: -0.0282 | Acc Sharpe: -0.80 | Sig Sharpe: -0.80 | MDD: 0.0497 | Calmar: -0.56
+
