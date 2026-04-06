@@ -120,7 +120,7 @@ def main():
         # Save Consolidated Sweep Result as TXT
         txt_path = f"reports/threshold_optimization/{asset}_sweep_audit.txt"
         with open(txt_path, "w", encoding="utf-8") as f:
-            f.write(f"--- {asset.upper()} AUDIT ---\n")
+            f.write(f"--- {asset.upper()} AUDIT on Train Data---\n")
             f.write(f"Baseline Win Rate: {baseline_win_rate:.4f}\n\n")
             
             f.write(f"--- 0 bps (Gross) ---\n")
