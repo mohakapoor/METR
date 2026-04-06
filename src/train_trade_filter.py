@@ -97,7 +97,7 @@ for asset in ASSETS:
     
     # TimeSeriesSplit
     for train_idx, test_idx in tscv.split(X_train, y_train):
-        fold_calib = CalibratedClassifierCV(best_raw_model, method='isotonic', cv=3)
+        fold_calib = CalibratedClassifierCV(best_raw_model, method='isotonic', cv=5)
         fold_calib.fit(X_train.iloc[train_idx], y_train.iloc[train_idx])
         
         # Predict on the "Future" fold
