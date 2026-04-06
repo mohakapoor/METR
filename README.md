@@ -33,7 +33,7 @@ hit), the trade is marked as a success. The model learns to
 identify conditions where momentum signals follow through.
 
 **Assets:** Nifty 50, GoldBees (NSE), USD/INR  
-**Training:** 2012–2024 | **Out-of-Sample:** 2024–2026  
+**Training:** 2014–2023 (2012–2013 reserved as lookback buffer) | **Out-of-Sample:** 2024–2025 
 **Features:** Momentum, volatility regimes, mean reversion, 
 India VIX derivatives, cross-asset stress filters  
 
@@ -45,17 +45,17 @@ India VIX derivatives, cross-asset stress filters
 | Metric | Value |
 |--------|-------|
 | Out-of-Sample Return | +17.92% |
-| Sharpe Ratio | 1.21 |
+| Sharpe Ratio | 1.48 (Account) / 1.51 (Signal) |
 | Max Drawdown | 7.99% |
 | Calmar Ratio | 1.87 |
 | Win Rate | 66.1% (39/59 trades) |
 | Raw Signal Baseline Sharpe | -0.73 |
 
 The raw momentum signal alone loses money. The meta-filter 
-transforms this into a profitable strategy — a +1.94 Sharpe 
+transforms this into a profitable strategy — a +2.21 Sharpe 
 lift attributable entirely to model trade selection.
 
-### Statistical Validation (Gold, OOS 2024–2026)
+### Statistical Validation (Gold, OOS 2024–2025)
 | Test | P-value | Result |
 |------|---------|--------|
 | Monte Carlo (10,000 simulations) | 0.0104 | ✅ Significant |
@@ -114,9 +114,13 @@ METR/
 │   ├── data_cleaning.ipynb  # Join, align, and stabilize asset timestamps
 │   ├── feature_engineering.ipynb # Advanced indicators and Meta-Label synthesis
 │   ├── feature_eng.py       # Technical indicator library (Polars-optimized)
-│   ├── tripple_barrier.py   # Forward-scanning dynamic labeling algorithm
+│   ├── triple_barrier.py   # Forward-scanning dynamic labeling algorithm
 │   ├── train_trade_filter.py # Primary XGBoost Meta-Model (GPU accelerated)
 │   ├── train_baseline.py    # Logistic Regression baseline (StandardScaler)
+│   ├── backtest_engine.py   # Compounded equity curve and performance metrics
+│   ├── monte_carlo_audit.py # 10,000-iteration statistical validation
+│   ├── threshold_optimizer.py # Calmar-based threshold selection (train set only)
+│   ├── shap_audit.py        # SHAP feature importance and attribution
 │   ├── feature_separation.py # ROC AUC analysis of individual feature signal
 │   └── feature_analysis.py  # Feature importance and Correlation extraction
 ├── config.yaml              # Global project config (features, thresholds, T=5)
@@ -131,3 +135,4 @@ Research observations and results are logged chronologically:
 
 ## References
 * [Triple Barrier Labelling Algorithm](https://williamsantos.me/posts/2022/triple-barrier-labelling-algorithm/) by William Santos – *Implementation guidance for the forward-scanning volatility-adaptive labeling method.*
+* [Is Differencing Too Much? Fractional Differencing Financial Data](https://medium.com/@The-Quant-Trading-Room/is-differencing-too-much-fractional-differencing-financial-data-03299c824c0d) by The Quant Trading Room – *Theoretical foundation for the Fractional Differentiation approach used in METR for memory preservation.*
