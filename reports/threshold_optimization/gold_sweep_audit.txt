@@ -1,4 +1,4 @@
---- GOLD AUDIT ---
+--- GOLD AUDIT on Train Data---
 Baseline Win Rate: 0.5141
 
 --- 0 bps (Gross) ---
