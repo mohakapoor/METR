@@ -141,7 +141,7 @@ def evaluate_triple_barrier_grid(assets):
 
             fig = plt.figure(figsize=(15, 8))
             gs = fig.add_gridspec(2, 2, width_ratios=[1, 1], height_ratios=[1, 1])
-            fig.suptitle(f"Triple Barrier Grid (T={t_val}) — {name.upper()} (max class ≤ {MAX_CLASS_PCT}%)", fontsize=16, fontweight='bold')
+            fig.suptitle(f"Triple Barrier Grid (T={t_val}) — {name.upper()}", fontsize=16, fontweight='bold')
 
             ax1 = fig.add_subplot(gs[0, 0])
             ax2 = fig.add_subplot(gs[1, 0])
@@ -171,7 +171,7 @@ def evaluate_triple_barrier_grid(assets):
                     bar_colors[best_idx] = '#f39c12'
             ax2.bar(x, scores, color=bar_colors, width=0.5)
             ax2.set_ylabel('Balance Score')
-            ax2.set_title('Distance from Perfect Balance (lower = better)')
+            ax2.set_title('Distance from Perfect Balance')
             ax2.set_xticks(x)
             ax2.set_xticklabels(labels_list, rotation=45, ha='right', fontsize=8)
 
