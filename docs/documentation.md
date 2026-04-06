@@ -50,6 +50,14 @@ Targeting two distinct specialized notebooks:
 - **Directional P&L Attribution**: Adjusting returns via the trade signal (`Return * Signal`) to evaluate directional accuracy (Meta_Label = 1 for positive directional outcomes).
 - **Systemic Risk Interaction**: Implementation of the `Usdinr_Stress_Filter` and cross-asset Relative Strength metrics to isolate actionable alpha from statistical noise.
 
+### 2.3 Base Signal Construction
+The primary momentum signal is constructed as a volatility-normalized threshold filter:
+- **Signal = +1** if $Ret_{5d} > Vol_{20d}$ (Long conviction)
+- **Signal = -1** if $Ret_{5d} < -Vol_{20d}$ (Short conviction)
+- **Signal = 0** otherwise (Flat — no trade)
+
+**Methodological Constraint**: Only rows where $Signal \neq 0$ enter the meta-filter training and evaluation pipeline. This ensures the engine is optimized strictly for high-conviction momentum regimes.
+
 **Total Feature Scope:** 13 (Technical) + 12 (Core Interaction) + 5 (Macro/VIX).
 
 ### Train/Test Split
@@ -101,22 +109,20 @@ learning_rate: 0.1, max_depth: 4, n_estimators: 5000, subsample: 1.0
 
 ---
 
-### Model v2 — Regularized Configuration
+### Model v2 — Optimized Regularization (Production Logic)
 
-**Changes Made:**
-| Parameter | v1 | v2 | Rationale |
-|-----------|----|----|-----------|
-| `max_depth` | [2,3,4,5] | **[3,4]** | Shallower trees |
-| `subsample` | [1.0] | **[0.8, 0.9, 1.0]** | Each tree sees subset of rows |
-| `colsample_bytree` | Not set | **[0.8, 0.9, 1.0]** | Each tree sees subset of features |
-| `reg_alpha` (L1) | Not set | **[0, 0.01, 0.1]** | Sparse leaf weights |
-| `reg_lambda` (L2) | Not set | **[0.5, 1.0, 2.0]** | Smooth leaf weights |
-| Early stopping | None | **30 rounds** | Halt when validation stops improving |
-
-**Best Parameters Found:**
-```
-colsample_bytree: 0.9, learning_rate: 0.05, max_depth: 4, 
-n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
+**Final Hyperparameter Grid:**
+```python
+param_grid = {
+    "max_depth":        [2, 3],
+    "learning_rate":    [0.02, 0.03, 0.05, 0.1],
+    "n_estimators":     [100, 125, 150],
+    "reg_lambda":       [20, 50, 100],
+    "min_child_weight": [15, 20, 30],
+    "gamma":            [0.3, 0.5, 1.0],
+    "subsample":        [0.8, 0.9],
+    "colsample_bytree": [0.8, 0.9]
+}
 ```
 
 **Results:**
@@ -149,7 +155,7 @@ n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
 **Methodological Improvements:**
 1. **Sign-Adjusted Returns**: Transitioned from raw `TB_Return` to `Directional_Return = TB_Return * Signal` to ensure directional alignment. 
 2. **Signal-Conditional Filtering**: Implemented training strictly on active regimes ($Signal \neq 0$).
-3. **Cross-Validation Calibration**: Migrated to **3-fold TimeSeries CV** for unbiased out-of-sample probability estimation.
+3. **Cross-Validation Calibration**: Migrated to **5-fold TimeSeries CV** for unbiased out-of-sample probability estimation.
 
 **Results (Model v3):**
 
@@ -159,7 +165,7 @@ n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
 | **Gold** | **0.5935** | 0.4602 |
 | **USD/INR** | 0.5489 | 0.4833 |
 
-**Conclusion:** The refined directional methodology effectively isolated the short-side alpha that was previously obscured. The adoption of **3-fold Cross-Validation** establishes a robust statistical foundation for probability estimation across the asset universe.
+**Conclusion:** The refined directional methodology effectively isolated the short-side alpha that was previously obscured. The adoption of **5-fold Cross-Validation** establishes a robust statistical foundation for probability estimation across the asset universe.
 
 ---
 
@@ -167,7 +173,7 @@ n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
 
 ### Monte Carlo Simulation
 - **Methodology:** 10,000 iterative simulations, each selecting a trade frequency identical to the model but initialized on randomized entry dates.
-- **Return Calculation:** 3-day compound returns reconstructed from `Ret_1d`
+- **Return Calculation:** Compound returns reconstructed from `Ret_1d`
 
 **Results (Model v1):**
 
@@ -182,6 +188,8 @@ n_estimators: 100, reg_alpha: 0.1, reg_lambda: 0.5, subsample: 0.8
 - P-value of 0.38 means not statistically significant at 95% confidence
 - However, 60.5% win rate vs 51% baseline is a meaningful edge for entry timing
 
+**Note:**
+- This preliminary audit was conducted on Model v1 using training-period data. Final statistical validation using the production model is reported in Section 15.
 ---
 
 ## 5. Feature Importance Analysis
@@ -237,7 +245,7 @@ By adopting **Asset-Specific Macro Interactors**, the model has successfully sur
 | **Directional Meta-Labeling** | Isolated short-side alpha using `Directional_Return`, enabling high-conviction directional filtering. |
 | **Cross-Asset Integration** | Integrated Nifty-Gold Relative Strength and VIX Efficiency to surpass the **0.15 correlation threshold**. |
 | **Execution Cost Audits** | Comparative analysis (0-bps vs. 5-bps) isolated **GOLDBEES** as the primary strategy anchor and **Nifty** as a high-efficiency component. |
-| **TimeSeries CV Calibration** | Implemented 3-Fold Cross-Validation for unbiased probability estimation. |
+| **TimeSeries CV Calibration** | Implemented 5-Fold Cross-Validation for unbiased probability estimation. |
 | **Fractional Differentiation** | Parameter selection ($d=0.45$) preserved ~81% of historical memory while achieving statistical stationarity for model compatibility. |
 
 ---
@@ -292,7 +300,7 @@ Empirical analysis indicates that $T=3$ proved overly sensitive to market noise 
 To solve the stationarity-memory trade-off, **Fractional Differentiation** ($d \in [0.1, 0.9]$) was implemented. This ensures the features are stationary for ML models while retaining as much historical "memory" as possible, unlike standard integer-differencing ($d=1$).
 
 ### 9.1 Methodology
-This study uses `src/frac_diff.py` with a threshold of **$10^{-4}$** to balance mathematical precision with data availability (lookback length). Instead of a strict ADF $p < 0.05$ cutoff, parameters were selected by maximizing **Memory Preservation** (correlation with original series) while achieving sufficient stationarity.
+This study uses `src/frac_diff.py` with a threshold of **$10^{-4}$** to balance mathematical precision with data availability (lookback length). The objective was to maximize **Memory Preservation** (correlation with the original series). Parameters were selected with a deliberate relaxation of the ADF threshold ($p < 0.10$), as empirical testing demonstrated that the marginal stationarity gains from a strict $p < 0.05$ cutoff did not justify the significant loss of historical memory in a 5-day horizon model.
 
 ### 9.2 Final Manual Selection ($d$)
 | Asset | Optimal $d$ | Correlation | ADF p-value | Characteristic |
@@ -340,19 +348,19 @@ The following features are synthesized in `src/indicators.py` and `src/feature_e
 
 ---
 
-## 11. Threshold Optimization 
-*(Dual-Friction Audit: 0 bps vs. 5 bps)*
+## 11. In-Sample Threshold Optimization (Training Set) 
+*(Training Sweep: 2014–2023 | 5 bps Friction)*
 
-To bridge the gap between "Research Edge" and "Production Edge," we performed a forensic grid search across all thresholds $T$. The goal was to maximize **Net Calmar** (Strategy Efficiency) while monitoring **Friction Decay**.
+To bridge the gap between "Research Edge" and "Production Reliability," I performed a grid search across all probability thresholds $T$ within the training set. The objective was to satisfy the **Investability Peak**—maximizing the **Net Calmar Ratio** while simultaneously monitoring for **Friction Sensitivity**.
 
 ### 11.1 The Economic Feasibility Audit
-The strategy was evaluated against an institutional-standard friction of **5 basis points (bps)** per round-trip transaction.
+The strategy was evaluated against a professional-standard floor friction of **5 basis points (bps)** per round-trip transaction.
 
 | Asset | Target Threshold ($T$) | Net Sharpe (5-bps) | Net MDD (5-bps) | Net Calmar (5-bps) | Component Classification |
 |-------|----------------------------|--------------------|-----------------|--------------------|---------------|
-| **GOLDBEES** | **0.52** | **1.42** | **0.18** | **7.66** | **Primary Strategy Anchor** |
-| **NIFTY** | **0.49** | **0.63** | **0.07** | **8.71** | **High-Efficiency Component** |
-| **USD/INR** | 0.50 | **-2.41** | 0.03 | < 0 | **Excluded (High Friction)** |
+| **GOLDBEES** | **0.52** | **1.42** | **0.18** | **7.66** | **Statistically Significant (OOS)** |
+| **Nifty 50** | **0.49** | **0.63** | **0.07** | **8.71** | **Null Result (OOS)** |
+| **USD/INR** | 0.50 | **-2.41** | 0.03 | < 0 | **Null Result (OOS)** |
 
 ### 11.2 Optimization Result: The Nifty Efficiency Shift
 Quantitative analysis indicates that while Nifty achieves its individual alpha peak at $T=0.48$, the **optimal efficiency peak occurs at $T=0.49$.** This slight adjustment in the probability threshold reduces the **Maximum Drawdown from 0.23 to 0.07 (a 70% reduction)**, significantly improving the strategy's risk-adjusted profile.
@@ -362,25 +370,24 @@ Quantitative analysis indicates that while Nifty achieves its individual alpha p
 
 The project addressed high model variance by pivoting from univariate technicals to a global macro-regime context. This transition transformed the filters into logic-driven components capable of adapting to systemic market stress.
 
-- **Variance Reduction**: Systematic regularization (depth 3-5, min-child 5-10) reduced the USD/INR training divergence from 0.44 to 0.17 without compromising signal integrity.
+- **Variance Reduction**: Systematic regularization (depth 2-3, min-child 15-30) reduced the USD/INR training divergence from 0.44 to 0.17 without compromising signal integrity.
 - **Cross-Asset Integration**: Predictive capability was enhanced by integrating **Nifty Volatility** and **Gold Performance** into the FX and Gold models. The engine now identifies that Gold's momentum is validated primarily when equity markets exhibit structural stress.
-- **The Alpha Profile**: These refinements produced a **+10.7% return differential** on high-conviction signals, validating cross-asset context as a primary driver of accuracy.
-- **Attribution Analysis**: SHAP value evaluation confirmed that the **`Usdinr_Stress_Filter`** (Systemic Volatility * Risk-Aversion) is the fundamental source of outperformance, functioning as an indicator of systemic market instability.
+- **Attribution Analysis**: SHAP evaluation confirmed **Vol Efficiency** (19.63 gain) and **VIX_Momentum_Efficiency** (13.30 gain) as the primary alpha drivers for Gold, with USD/INR cross-asset features contributing a secondary ~9.8% of total model gain—consistent with GoldBees' structural exposure to rupee-dollar movements.
 
 ---
 
+## 13. Strategy Status Conclusion: Out-of-Sample Validation
+*(Validation Period: 2024–2025 | 5 bps Friction)*
 
----
+The final performance audit summarizes the system's efficacy on unseen data (Out-of-Sample) using the optimized thresholds derived from the training set.
 
-## 13. Strategy Status Conclusion
-
-Performance summary at optimized efficiency thresholds:
-
-| Asset | Critical Threshold (T) | Test ROC AUC | Net Sharpe (5-bps) | Net Calmar | Strategy Verdict |
+| Component | Target ($T$) | Test ROC AUC | Account Sharpe* | Net MDD | Strategy Verdict |
 |---|---|---|---|---|---|
-| **GOLDBEES** | **0.52** | **0.5935** | **1.42** | **7.66** | **Active - Core Anchor** |
-| **NIFTY** | **0.49** | **0.5918** | **0.63** | **8.71** | **Active - High Efficiency** |
-| **USDINR** | — | 0.5489 | < 0 | < 0 | **Inactive (High Friction)** |
+| **GOLDBEES** | **0.52** | **0.5935** | **1.48** | **0.08** | **Statistically Significant** |
+| **Nifty 50** | **0.49** | **0.5918** | **-0.48** | **0.16** | **Null Result** |
+| **USD/INR** | **0.50** | 0.5489 | **-0.80** | **0.05** | **Null Result** |
+
+*\*Account Sharpe (sqrt(252) annualized)*
 
 ### Management Conclusion
 The framework effectively isolates high-probability entry regimes. The exclusion of USD/INR is a programmatic risk management decision, demonstrating that strategies must maintain robustness to transaction costs before capital allocation. The strategy is now restricted to high-conviction, low-drawdown components.
@@ -392,52 +399,22 @@ The framework effectively isolates high-probability entry regimes. The exclusion
 
 My attempts to integrate a **GaussianHMM** (Hidden Markov Model) to explicitly define "Crisis states" were **rejected** for inclusion in the final build. The HMM added significant complexity without outperforming the simpler, more stable **VIX_Shock** and **Nifty_Vol** indicators already present in the XGBoost architecture.
 
----
-
-### 14.1 Asset-Specific Model Tuning
-Each asset behaves differently and requires tailored hyperparameters:
-
-| Asset | Recommended Approach |
-|-------|---------------------|
-| **Nifty (Equity)** | Trend/momentum focus, moderate depth |
-| **Gold (Commodity)** | Lower learning rate (violent bursts), hedge/safety features |
-| **USD/INR (FX)** | Higher regularization (central bank-managed), mean-reversion focus |
-
-### 14.2 Regime Modeling
-A volatility filter to avoid trading during high-volatility periods remains a strategic improvement:
-- Implementation of a dedicated classifier to predict high/low volatility regimes.
-- Restricting exposure trades exclusively to "Calm" regimes.
-
-### ## 15. Future Research Directions
-
-### 15.1 Asset-Specific Model Tuning
-
-| File | Purpose |
-|------|---------|
-| `src/fetch_data.py` | Automated historical data ingestion (yfinance) |
-| `src/data_cleaning.ipynb` | Join, align, and synchronize multi-asset timestamps |
-| `src/feature_engineering.ipynb` | Final synthesized dataset generation and Meta-Labeling |
-| `src/feature_eng.py` | Technical indicator library (Polars-optimized) |
-| `src/tripple_barrier.py` | Algorithm for forward-scanning volatility labeling |
-| `src/train_trade_filter.py` | XGBoost Meta-Model training (GPU accelerated) |
-| `src/train_baseline.py` | Logistic Regression baseline model |
-| `src/feature_separation.py` | ROC AUC analysis of individual feature signal strength |
-| `data/processed/train/` | Cleaned 2014-2023 training shards |
-| `data/processed/test/` | Out-of-sample 2024-2025 evaluation sets |
 
 ---
 
-### Ex-Post Performance Audit (2024-2025)
+## 15. Performance Validation
+
+### 15.1 Ex-Post Audit Results (2024–2025)
 
 The final evaluation phase utilized an out-of-sample (OOS) audit incorporating institutional compounding and a **Stochastic Benchmarking** simulation (Monte Carlo), supported by three independent statistical tests (Binomial, Kupiec, and T-test).
 
-| Asset | Annualized Sharpe | Adjusted Signal Sharpe | MDD (Comp.) | Calmar |
+| Component | Account Sharpe (sqrt252) | Signal Sharpe (trade-freq) | MDD (Comp.) | Calmar |
 |---|---|---|---|---|
-| **GOLD ($T=0.52$)** | **1.21** | **1.51** | **7.99%** | **1.87** |
-| **NIFTY ($T=0.49$)** | -0.40 | -0.48 | 15.57% | -0.43 |
-| **USD/INR ($T=0.50$)** | -0.60 | -0.80 | 4.97% | -0.56 |
+| **GOLD ($T=0.52$)** | **1.48** | **1.51** | **7.99%** | **1.87** |
+| **NIFTY ($T=0.49$)** | -0.48 | -0.48 | 15.57% | -0.43 |
+| **USD/INR ($T=0.50$)** | -0.80 | -0.80 | 4.97% | -0.56 |
 
-### Academic Validation Checklist
+### 15.2 Academic Validation Checklist
 
 To isolate true skill from luck, every asset was subjected to a triple-layered statistical stress test:
 
@@ -448,52 +425,47 @@ To isolate true skill from luck, every asset was subjected to a triple-layered s
 | **Kupiec (Reliability)** | **LR Calc / 0.0126** | LR Calc / 0.8886 | LR Calc / 0.6841 |
 | **T-test (Mean Ret)** | t=1.62 / 0.1099 | t=-0.53 / 0.5943 | t=-0.80 / 0.4242 |
 
+> [!NOTE]
+> **Model Sharpe** in the Monte Carlo column (1.21) differs from backtest **Account Sharpe** (1.48) due to different annualization bases. The Monte Carlo audit uses trade-frequency annualization on signal-day filtered returns only, whereas the backtest uses the institutional standard $\sqrt{252}$ on the full daily return series (including flat days).
+
 **Conclusion**:
-Gold is the only asset to achieve statistical significance across multiple independent evaluations. Most notably, the meta-filter successfully converted a suboptimal baseline signal (-0.73) into a statistically significant alpha (1.21). This provides definitive confirmation of the strategy's predictive edge within the METR architecture.
+Gold is the only asset to achieve statistical significance across multiple independent evaluations. Most notably, the meta-filter successfully converted a suboptimal baseline signal (-0.73) into a statistically significant alpha (Account Sharpe 1.48). This provides definitive confirmation of the strategy's predictive edge within the METR architecture.
 
 ---
 
-## 16. METR — Final Conclusions
+## 16. Final Research Conclusions
 
-### Primary Finding
-A meta-labeling framework combining a momentum-based signal with an XGBoost filter trained on historical price, volume, and implied volatility data generates statistically significant alpha on GOLDBEES (NSE) over the out-of-sample period 2024-2026. The null hypothesis — that model-selected trades perform no better than stochastic selection from the same signal universe — is rejected at p<0.05 across three independent statistical tests.
+### 16.1 Primary Finding
+A meta-labeling framework combining a momentum-based signal with an XGBoost filter trained on historical price, volume, and implied volatility data generates statistically significant alpha on GOLDBEES (NSE) over the out-of-sample period 2024–2025. The null hypothesis—that model-selected trades perform no better than stochastic selection—is rejected at $p < 0.05$ across three independent statistical tests.
 
----
-
-### Gold — Statistically Significant Alpha
-
+### 16.2 GOLDBEES: Statistically Significant Alpha
 ```
-Total Return:     +17.92% (out-of-sample, 2024-2026)
-Sharpe Ratio:      1.21 (trade-frequency annualized)
+Total Return:     +17.92% (out-of-sample, 2024-2025)
+Account Sharpe:   1.48 (sqrt(252), institutional standard)
+Signal Sharpe:    1.51 (trade-frequency annualized)
+Monte Carlo Sharpe: 1.21 (signal-day filtered, used for statistical comparison)
 Max Drawdown:      7.99%
 Calmar Ratio:      1.87
 Win Rate:          66.1% (39/59 trades)
 Baseline Sharpe:  -0.73 (signal-only, no filter)
 ```
 
-The raw momentum signal alone loses money (Sharpe -0.73). The model filter transforms this into a profitable strategy (Sharpe +1.21), representing a **+1.94 Sharpe lift** attributable entirely to the model's trade selection. This directly validates the meta-labeling hypothesis — the signal provides the opportunity universe, the model provides the edge.
+The raw momentum signal alone loses money (Sharpe -0.73). The model filter transforms this into a profitable strategy (Account Sharpe +1.48), representing a **+2.21 Sharpe lift** attributable entirely to the model's trade selection. This directly validates the meta-labeling hypothesis — the signal provides the opportunity universe, the model provides the edge.
 
 **Statistical confirmation**: Monte Carlo (p=0.0104), Binomial (p=0.0092), Kupiec (p=0.0126) all significant. T-test underpowered at n=59 — explained by selective filtering reducing trade count.
 
-The SHAP analysis revealed that Vol Efficiency, VIX_Momentum_Efficiency, RSI, and Ret_5d are the primary alpha drivers, with USD/INR features contributing meaningfully — consistent with GoldBees' structural exposure to rupee-dollar exchange rate movements.
+The SHAP analysis revealed that Vol Efficiency, VIX_Momentum_Efficiency, RSI, and Ret_5d are the primary alpha drivers, with USD/INR features contributing meaningfully—consistent with GoldBees' structural exposure to rupee-dollar exchange rate movements.
 
----
-
-### Nifty 50 — Null Result (Efficiency Benchmark)
-
+### 16.3 Nifty 50: Null Result (Efficiency Benchmark)
 ```
 Total Return:    -8.01%
 Sharpe:          -0.40
 Win Rate:         50.5%
 All 4 tests:     Non-significant
 ```
-
 The meta-filter demonstrates no exploitable edge on Nifty 50. Analysis confirmed near-zero directional separation across all features (max AUC 0.029). This is consistent with the high institutional coverage and deep liquidity of India's benchmark equity index, which limits the predictive power of price-only features. The model correctly produces a null result on an efficiently priced asset.
 
----
-
-### USD/INR — Null Result (Managed Float)
-
+### 16.4 USD/INR: Null Result (Managed Float)
 ```
 Total Return:    -2.82%
 Sharpe:          -0.60
@@ -505,23 +477,59 @@ No statistically significant alpha detected. The managed float nature of USD/INR
 
 ---
 
-### Cross-Asset Evaluation Findings
-
+### 16.5 Cross-Asset Evaluation Findings
 The divergent results across the three asset classes are not indicative of a methodological failure, but rather represent a core empirical finding. The framework accurately identifies exploitable market structure where theoretical precursors exist (commodity ETF with embedded currency exposure and historical inefficiencies) while correctly identifying the absence of edge in highly efficient or managed environments (benchmark equity indices and managed currency pairs). This internal consistency across varying market regimes provides further credibility to the METR architecture.
 
----
-
-### Strategic Implications
-
+### 16.6 Strategic Implications
 The METR study demonstrates that price action, volume, and implied volatility data—independent of exogenous macro indicators or sentiment analysis—are sufficient to construct a statistically significant meta-filter for GOLDBEES that outperforms stochastic market entry. However, the same data set remains insufficient to generate significant alpha on deeply liquid benchmark indices or strictly managed currency pairs.
 
 This confirms that market exposure timing via meta-labeling is a highly asset-specific and regime-sensitive approach, offering practical viability for specific commodity instruments within the Indian market ecosystem.
 
-**METR RESEARCH STATUS: COMPLETE (GOLD STRATEGY FINALIZED)**
+---
+
+## 17. Known Limitations
+
+### Sample Size
+The Gold engine produced 59 trades over the 2024–2025 out-of-sample 
+period. This is a direct consequence of high-conviction filtering — 
+selectivity is the mechanism, not a bug. However, n=59 limits 
+statistical power, which is why the t-test (underpowered by design) 
+is supplemented by three independent tests. A longer OOS window would 
+strengthen confidence.
+
+### Threshold Selection on Training Data
+Production thresholds (Gold T=0.52, Nifty T=0.49) were selected via 
+grid search on training data (2014–2023). Gold's performance held 
+OOS (Calmar 1.87), validating the selection. Nifty's train Calmar 
+of 8.71 collapsed to -0.43 OOS — consistent with and confirming the 
+null result. A held-out validation set would be the methodological 
+improvement here.
+
+### Near-Stationarity (FracDiff)
+Nifty (ADF p=0.079) and Gold (ADF p=0.096) do not satisfy the 
+conventional p<0.05 stationarity threshold. This was a deliberate 
+engineering decision: stricter thresholds required lower d values 
+that reduced memory retention by ~8% with marginal stationarity 
+gain. For a meta-labeling filter operating on 5-day horizons, 
+near-stationarity with high memory retention is preferable to strict 
+stationarity with degraded signal.
+
+### Friction Assumption
+All net results assume a fixed 5 bps round-trip cost. Real execution 
+costs vary with liquidity, order size, and market conditions. Higher 
+slippage would compress the Gold edge — though the dual-friction 
+audit (0 bps vs 5 bps) confirms the strategy survives standard 
+institutional costs.
+
+### Single OOS Window
+The 2024–2025 test period represents one market regime. The Gold 
+result may not generalize across different macro environments 
+(e.g., sustained low-volatility, deflationary periods). Walk-forward 
+validation across multiple regimes would be the natural next step.
 
 ---
 
-## 17. Index of Project Files
+## 18. Project Architecture Index
 
 | File | Purpose |
 |------|---------|
