@@ -67,7 +67,7 @@ for asset in ASSETS:
     # 3. Plot 
     plot_n = 15
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    fig.suptitle(f"Phase 8 Analysis — {asset.upper()} (Top {plot_n} Meta-Drivers)", fontsize=14, fontweight="bold")
+    fig.suptitle(f"Phase 8 Analysis — {asset.upper()} (Top {plot_n} Drivers)", fontsize=14, fontweight="bold")
 
     # Left: Gain importance (Top 15)
     ax = axes[0]
@@ -75,7 +75,7 @@ for asset in ASSETS:
     top_vals  = feat_vals[:plot_n]
     colors = ["#4CAF50" for _ in range(len(top_vals))]
     ax.barh(top_names[::-1], top_vals[::-1], color=colors)
-    ax.set_title("Alpha Source: Importance (Gain)", fontweight="bold")
+    ax.set_title("Importance (Gain)", fontweight="bold")
     ax.set_xlabel("Gain")
 
     # Right: Correlation (Top 15)
@@ -85,7 +85,7 @@ for asset in ASSETS:
     
     colors = ["#2ecc71" if r > 0 else "#e74c3c" for r in top_corr_vals[::-1]]
     ax.barh(top_corr_names[::-1], top_corr_vals[::-1], color=colors)
-    ax.set_title("Alpha Direction: Correlation", fontweight="bold")
+    ax.set_title("Correlation", fontweight="bold")
     ax.set_xlabel("r")
     ax.axvline(0, color="black", linewidth=0.8)
 
