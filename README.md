@@ -20,6 +20,10 @@
     <b>License:</b> <code>MIT</code> &nbsp;•&nbsp; 
     <b>Validation:</b> <code>10k Monte Carlo</code>
   </p>
+
+  <p align="center">
+    🌐 <b><a href="https://www.mohakapoor.in/projects/METR">Live Visual Audit & Strategy Explorer</a></b>
+  </p>
 </div>
 
 ---
@@ -111,5 +115,5 @@ Research observations and results are logged chronologically:
 ---
 
 <div align="center">
-  <sub>Built with precision for the next generation of algorithmic research.</sub>
+  <sub>Built with enthusiasm by Mohak Kapoor</sub>
 </div>
