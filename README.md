@@ -22,7 +22,7 @@
   </p>
 
   <p align="center">
-    🌐 <b><a href="https://www.mohakapoor.in/projects/METR">Live Visual Audit & Strategy Explorer</a></b>
+    🌐 <b><a href="https://www.mohakapoor.in/projects/METR">Interactive Dashboard</a></b>
   </p>
 </div>
 
