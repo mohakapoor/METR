@@ -2,14 +2,24 @@
   <h1>METR</h1>
   <p><strong>Market Exposure Timing Research</strong></p>
 
-  <p>
-    <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python Version" />
-    <img src="https://img.shields.io/badge/XGBoost-1.7+-green?style=for-the-badge&logo=xgboost&logoColor=white" alt="XGBoost" />
-    <img src="https://img.shields.io/badge/Status-Production%20Locked-gold?style=for-the-badge" alt="Status" />
-    <img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge" alt="License" />
+  <h4>A professional-grade meta-filtering framework for isolating statistical edge in financial markets.</h4>
+
+  <br />
+
+  <p align="center">
+    <img src="https://img.shields.io/badge/Python-3.10+-00599C?style=for-the-badge&logo=python&logoColor=white" />
+    <img src="https://img.shields.io/badge/XGBoost-1.7+-EE4C2C?style=for-the-badge&logo=xgboost&logoColor=white" />
+    <img src="https://img.shields.io/badge/Polars-Data%20Engineering-F7D010?style=for-the-badge&logo=polars&logoColor=black" />
+    <img src="https://img.shields.io/badge/Scikit--Learn-Analysis-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" />
+    <img src="https://img.shields.io/badge/YFinance-Data-green?style=for-the-badge" />
+    <img src="https://img.shields.io/badge/Joblib-Serialization-purple?style=for-the-badge" />
   </p>
 
-  <h4>A professional-grade meta-filtering framework for isolating statistical edge in financial markets.</h4>
+  <p align="center">
+    <b>Status:</b> <code>Finished</code> &nbsp;•&nbsp; 
+    <b>License:</b> <code>MIT</code> &nbsp;•&nbsp; 
+    <b>Validation:</b> <code>10k Monte Carlo</code>
+  </p>
 </div>
 
 ---
@@ -59,18 +69,6 @@ We don't just look at the PnL. We audit the probability of luck.
 | **Monte Carlo (10k runs)** | `0.0104` | ✅ Statistically Significant |
 | **Binomial Test** | `0.0092` | ✅ Statistically Significant |
 | **Kupiec Reliability** | `0.0126` | ✅ Statistically Significant |
-
----
-
-## 🛠️ Tech Stack
-
-<p align="left">
-  <img src="https://img.shields.io/badge/XGBoost-1.7+-blue?style=flat-square" />
-  <img src="https://img.shields.io/badge/Polars-Performance-orange?style=flat-square" />
-  <img src="https://img.shields.io/badge/Scikit--Learn-Analysis-blue?style=flat-square" />
-  <img src="https://img.shields.io/badge/YFinance-Data-green?style=flat-square" />
-  <img src="https://img.shields.io/badge/Joblib-Serialization-purple?style=flat-square" />
-</p>
 
 ---
 
