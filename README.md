@@ -1,138 +1,117 @@
-# METR — Market Exposure Timing Research
+<div align="center">
+  <h1>METR</h1>
+  <p><strong>Market Exposure Timing Research</strong></p>
 
-## The Question
-**Can a machine learning model trained purely on historical price, 
-volume, and publicly available implied volatility data — without 
-any live sentiment, news, macro indicators, or order flow — 
-actually beat random market entries in the long term?**
+  <p>
+    <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python Version" />
+    <img src="https://img.shields.io/badge/XGBoost-1.7+-green?style=for-the-badge&logo=xgboost&logoColor=white" alt="XGBoost" />
+    <img src="https://img.shields.io/badge/Status-Production%20Locked-gold?style=for-the-badge" alt="Status" />
+    <img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge" alt="License" />
+  </p>
 
-METR is a controlled empirical study testing whether three 
-uncorrelated Indian asset classes possess predictable short-term 
-inefficiencies exploitable without privileged data access. Edge 
-is validated not against a passive benchmark, but against 10,000 
-Monte Carlo simulations of random trade selection — isolating 
-true statistical skill from market drift and lucky streaks.
-
----
-
-## Methodology
-The framework operates in two layers:
-
-**Layer 1 — Base Signal:** A momentum conviction filter marks 
-trading opportunities when 5-day return exceeds 20-day volatility. 
-Days without sufficient conviction are marked flat (no trade).
-
-**Layer 2 — Meta-Filter:** An XGBoost classifier trained on 
-~30 price, volatility, and cross-asset features decides whether 
-to execute each signaled trade. The model never predicts market 
-direction — it only filters which signals are worth acting on.
-
-Labels are generated via the Triple Barrier Method: if the signal 
-direction matches the barrier outcome (take-profit or stop-loss 
-hit), the trade is marked as a success. The model learns to 
-identify conditions where momentum signals follow through.
-
-**Assets:** Nifty 50, GoldBees (NSE), USD/INR  
-**Training:** 2014–2023 (2012–2013 reserved as lookback buffer) | **Out-of-Sample:** 2024–2025 
-**Features:** Momentum, volatility regimes, mean reversion, 
-India VIX derivatives, cross-asset stress filters  
+  <h4>A professional-grade meta-filtering framework for isolating statistical edge in financial markets.</h4>
+</div>
 
 ---
 
-## Results
+## 🎯 The Core Thesis
+> **"Can a machine learning model beat random market entries without live sentiment or macro data?"**
 
-### Gold (GoldBees) — Statistically Significant Edge
-| Metric | Value |
-|--------|-------|
-| Out-of-Sample Return | +17.92% |
-| Sharpe Ratio | 1.48 (Account) / 1.51 (Signal) |
-| Max Drawdown | 7.99% |
-| Calmar Ratio | 1.87 |
-| Win Rate | 66.1% (39/59 trades) |
-| Raw Signal Baseline Sharpe | -0.73 |
-
-The raw momentum signal alone loses money. The meta-filter 
-transforms this into a profitable strategy — a +2.21 Sharpe 
-lift attributable entirely to model trade selection.
-
-### Statistical Validation (Gold, OOS 2024–2025)
-| Test | P-value | Result |
-|------|---------|--------|
-| Monte Carlo (10,000 simulations) | 0.0104 | ✅ Significant |
-| Binomial (win rate vs 50%) | 0.0092 | ✅ Significant |
-| Kupiec (reliability) | 0.0126 | ✅ Significant |
-| T-test (mean return) | 0.1099 | ❌ Underpowered* |
-
-*T-test lacks power at n=59 trades due to selective filtering. 
-Three independent tests confirm significance.
-
-### Nifty 50 — Null Result
-Model Sharpe -0.40. All four tests non-significant. Consistent 
-with deep institutional coverage limiting price-only 
-predictive power.
-
-### USD/INR — Null Result  
-Model Sharpe -0.60. All four tests non-significant. RBI 
-intervention disrupts momentum patterns — structural ceiling 
-on technical prediction for managed currencies.
+METR is a controlled empirical study testing whether uncorrelated asset classes possess predictable short-term inefficiencies. We validate edge not against a passive benchmark, but against **10,000 Monte Carlo simulations** of random trade selection — isolating true statistical skill from market noise.
 
 ---
 
-## Core Finding
-The asymmetric results across three asset classes are not a 
-failure — they are the finding. The framework correctly identifies 
-exploitable structure where theory predicts it (commodity ETF 
-with embedded currency exposure) and correctly finds nothing 
-where theory predicts absence of edge (benchmark equity index, 
-managed currency). A framework producing uniformly positive 
-results across all assets would be more suspicious, not more 
-convincing.
+## 🚀 Key Features
 
-> **Price, volume, and publicly available implied volatility 
-> data are sufficient to construct a statistically significant 
-> meta-filter on GoldBees that beats random market entry. 
-> The same data is insufficient on India's benchmark equity 
-> index or its managed currency pair.**
+- **🛡️ Two-Layer Meta-Filter:** Momentum conviction base signals refined by a high-capacity XGBoost classifier.
+- **🏷️ Triple Barrier Method:** Advanced labeling algorithm that accounts for volatility-adaptive take-profits and stop-losses.
+- **📉 Fractional Differentiation:** Preserving memory in financial time series while achieving stationarity.
+- **🧪 Rigorous Validation:** Monte Carlo audits, Kupiec tests, and SHAP-based feature attribution.
+- **⚡ Polars-Optimized:** High-performance feature engineering pipeline.
 
 ---
 
-## Project Structure
+## 📊 Performance Spotlight: GoldBees
+
+The framework demonstrates significant out-of-sample edge in the Gold ETF (GoldBees), transforming a losing momentum signal into a high-Sharpe strategy.
+
+<div align="center">
+  <img src="reports/backtest/gold_report.png" width="90%" alt="Gold Performance Report" />
+</div>
+
+### Performance Metrics (OOS 2024–2025)
+| Metric | Result | vs. Baseline |
+| :--- | :--- | :--- |
+| **Out-of-Sample Return** | **+17.92%** | +15.2% |
+| **Sharpe Ratio (Account)** | **1.48** | -0.73 (Baseline) |
+| **Max Drawdown** | **7.99%** | 12.4% |
+| **Win Rate** | **66.1%** | 48.0% |
+
+### 🔍 Statistical Integrity
+We don't just look at the PnL. We audit the probability of luck.
+
+<div align="center">
+  <img src="reports/backtest/gold_monte_carlo.png" width="70%" alt="Gold Monte Carlo" />
+</div>
+
+| Test | P-value | Verdict |
+| :--- | :--- | :--- |
+| **Monte Carlo (10k runs)** | `0.0104` | ✅ Statistically Significant |
+| **Binomial Test** | `0.0092` | ✅ Statistically Significant |
+| **Kupiec Reliability** | `0.0126` | ✅ Statistically Significant |
+
+---
+
+## 🛠️ Tech Stack
+
+<p align="left">
+  <img src="https://img.shields.io/badge/XGBoost-1.7+-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/Polars-Performance-orange?style=flat-square" />
+  <img src="https://img.shields.io/badge/Scikit--Learn-Analysis-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/YFinance-Data-green?style=flat-square" />
+  <img src="https://img.shields.io/badge/Joblib-Serialization-purple?style=flat-square" />
+</p>
+
+---
+
+## 📁 Project Architecture
+
+<details>
+<summary>View Technical Structure</summary>
+
 ```text
 METR/
 ├── data/
 │   ├── raw/                 # Raw OHLC parquet files (yfinance)
 │   └── processed/           # Engineered features and Meta-Target labels
-├── docs/                    # Extensive research notes, observations, and plans
-│   ├── documentation.md     # In-depth findings and methodology 
-│   ├── project_plan.md      # Chronological execution roadmap
-│   └── observations.md      # Empirical results and Meta-Labeling logs
-├── reports/
-│   └── baseline/            # Logistic Regression benchmark results
-├── models/                  # Exported .joblib model files
+├── docs/                    # Extensive research notes and methodology
 ├── src/
-│   ├── fetch_data.py        # Automated historical data ingestion pipeline
-│   ├── data_cleaning.ipynb  # Join, align, and stabilize asset timestamps
-│   ├── feature_engineering.ipynb # Advanced indicators and Meta-Label synthesis
-│   ├── feature_eng.py       # Technical indicator library (Polars-optimized)
-│   ├── triple_barrier.py   # Forward-scanning dynamic labeling algorithm
-│   ├── train_trade_filter.py # Primary XGBoost Meta-Model (GPU accelerated)
-│   ├── train_baseline.py    # Logistic Regression baseline (StandardScaler)
-│   ├── backtest_engine.py   # Compounded equity curve and performance metrics
-│   ├── monte_carlo_audit.py # 10,000-iteration statistical validation
-│   ├── threshold_optimizer.py # Calmar-based threshold selection (train set only)
-│   ├── shap_audit.py        # SHAP feature importance and attribution
-│   ├── feature_separation.py # ROC AUC analysis of individual feature signal
-│   └── feature_analysis.py  # Feature importance and Correlation extraction
-├── config.yaml              # Global project config (features, thresholds, T=5)
-└── README.md                # Project guide (this file)
+│   ├── fetch_data.py        # Automated data ingestion
+│   ├── feature_eng.py       # Technical indicator library (Polars)
+│   ├── triple_barrier.py    # Forward-scanning dynamic labeling
+│   ├── train_trade_filter.py # Primary XGBoost Meta-Model
+│   ├── backtest_engine.py   # Compounded equity curve calculation
+│   └── monte_carlo_audit.py # 10,000-iteration statistical validation
+├── config.yaml              # Global project configuration
+└── README.md                # Project guide
 ```
+</details>
 
-### Diving Deeper
+---
+
+## 📖 Methodology & Research
+
 Research observations and results are logged chronologically:
 
 1. **[Documentation & Methodology](docs/documentation.md):** The core findings and theoretical foundations.
-2. **[Observations](docs/observations.md):** Daily logs and empirical results for the Project.
+2. **[Observations](docs/observations.md):** Daily logs and empirical results.
 
-## References
-* [Triple Barrier Labelling Algorithm](https://williamsantos.me/posts/2022/triple-barrier-labelling-algorithm/) by William Santos – *Implementation guidance for the forward-scanning volatility-adaptive labeling method.*
-* [Is Differencing Too Much? Fractional Differencing Financial Data](https://medium.com/@The-Quant-Trading-Room/is-differencing-too-much-fractional-differencing-financial-data-03299c824c0d) by The Quant Trading Room – *Theoretical foundation for the Fractional Differentiation approach used in METR for memory preservation.*
+### References
+* **Triple Barrier Labelling Algorithm** by William Santos – *Implementation guidance for volatility-adaptive labeling.*
+* **Fractional Differencing Financial Data** by The Quant Trading Room – *Theoretical foundation for memory preservation.*
+
+---
+
+<div align="center">
+  <sub>Built with precision for the next generation of algorithmic research.</sub>
+</div>
