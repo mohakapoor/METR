@@ -22,30 +22,30 @@
   </p>
 
   <p align="center">
-    🌐 <b><a href="https://www.mohakapoor.in/projects/METR">Interactive Dashboard</a></b>
+    <b><a href="https://www.mohakapoor.in/projects/METR">Interactive Dashboard</a></b>
   </p>
 </div>
 
 ---
 
-## 🎯 The Core Thesis
+## The Idea
 > **"Can a machine learning model beat random market entries without live sentiment or macro data?"**
 
-METR is a controlled empirical study testing whether uncorrelated asset classes possess predictable short-term inefficiencies. We validate edge not against a passive benchmark, but against **10,000 Monte Carlo simulations** of random trade selection — isolating true statistical skill from market noise.
+METR is a controlled empirical study testing whether uncorrelated asset classes possess predictable short-term inefficiencies. I validated edge not against a passive benchmark, but against **10,000 Monte Carlo simulations** of random trade selection — isolating true statistical skill from market noise.
 
 ---
 
-## 🚀 Key Features
+## Technical Framework
 
-- **🛡️ Two-Layer Meta-Filter:** Momentum conviction base signals refined by a high-capacity XGBoost classifier.
-- **🏷️ Triple Barrier Method:** Advanced labeling algorithm that accounts for volatility-adaptive take-profits and stop-losses.
-- **📉 Fractional Differentiation:** Preserving memory in financial time series while achieving stationarity.
-- **🧪 Rigorous Validation:** Monte Carlo audits, Kupiec tests, and SHAP-based feature attribution.
-- **⚡ Polars-Optimized:** High-performance feature engineering pipeline.
+- **Meta-Filter Architecture:** Momentum conviction base signals refined by a high-capacity XGBoost classifier.
+- **Triple Barrier Labeling:** Advanced labeling algorithm that accounts for volatility-adaptive take-profits and stop-losses.
+- **Fractional Differentiation:** Preserving memory in financial time series while achieving stationarity.
+- **Rigorous Validation:** Monte Carlo audits, Kupiec tests, and SHAP-based feature attribution.
+- **High-Performance Data Engineering:** Optimized Polars-based feature extraction and transformation pipeline.
 
 ---
 
-## 📊 Performance Spotlight: GoldBees
+## Strategic Performance Analysis: GoldBees
 
 The framework demonstrates significant out-of-sample edge in the Gold ETF (GoldBees), transforming a losing momentum signal into a high-Sharpe strategy.
 
@@ -61,8 +61,8 @@ The framework demonstrates significant out-of-sample edge in the Gold ETF (GoldB
 | **Max Drawdown** | **7.99%** | 12.4% |
 | **Win Rate** | **66.1%** | 48.0% |
 
-### 🔍 Statistical Integrity
-We don't just look at the PnL. We audit the probability of luck.
+### Validation & Hypothesis Testing
+Beyond absolute returns, I audited the probability of statistical luck through rigorous hypothesis testing.
 
 <div align="center">
   <img src="reports/backtest/gold_monte_carlo.png" width="70%" alt="Gold Monte Carlo" />
@@ -70,13 +70,13 @@ We don't just look at the PnL. We audit the probability of luck.
 
 | Test | P-value | Verdict |
 | :--- | :--- | :--- |
-| **Monte Carlo (10k runs)** | `0.0104` | ✅ Statistically Significant |
-| **Binomial Test** | `0.0092` | ✅ Statistically Significant |
-| **Kupiec Reliability** | `0.0126` | ✅ Statistically Significant |
+| **Monte Carlo (10k runs)** | `0.0104` | Significant |
+| **Binomial Test** | `0.0092` | Significant |
+| **Kupiec Reliability** | `0.0126` | Significant |
 
 ---
 
-## 📁 Project Architecture
+## Project Architecture
 
 <details>
 <summary>View Technical Structure</summary>
@@ -101,7 +101,7 @@ METR/
 
 ---
 
-## 📖 Methodology & Research
+## Methodology & Research Documentation
 
 Research observations and results are logged chronologically:
 
@@ -115,5 +115,5 @@ Research observations and results are logged chronologically:
 ---
 
 <div align="center">
-  <sub>Built with enthusiasm by Mohak Kapoor</sub>
+  <sub>Built and Researched with Enthusiasm by Mohak Kapoor</sub>
 </div>
