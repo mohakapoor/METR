@@ -2,7 +2,7 @@
   <h1>METR</h1>
   <p><strong>Market Exposure Timing Research</strong></p>
 
-  <h4>A professional-grade meta-filtering framework for isolating statistical edge in financial markets.</h4>
+  <h4>A personal research project exploring if machine learning can improve simple trading signals.</h4>
 
   <br />
 
@@ -12,101 +12,82 @@
     <img src="https://img.shields.io/badge/Polars-Data%20Engineering-F7D010?style=for-the-badge&logo=polars&logoColor=black" />
     <img src="https://img.shields.io/badge/Scikit--Learn-Analysis-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" />
     <img src="https://img.shields.io/badge/YFinance-Data-green?style=for-the-badge" />
-    <img src="https://img.shields.io/badge/Joblib-Serialization-purple?style=for-the-badge" />
   </p>
 
   <p align="center">
     <b>Status:</b> <code>Finished</code> &nbsp;•&nbsp; 
-    <b>License:</b> <code>MIT</code> &nbsp;•&nbsp; 
-    <b>Validation:</b> <code>10k Monte Carlo</code>
-  </p>
-
-  <p align="center">
-    <b><a href="https://www.mohakapoor.in/projects/METR">Interactive Dashboard</a></b>
+    <b>License:</b> <code>MIT</code>
   </p>
 </div>
 
 ---
 
-## The Idea
-> **"Can a machine learning model beat random market entries without live sentiment or macro data?"**
+## What is this project?
+> **"Can a machine learning model beat random market entries using just price and volume data?"**
 
-METR is a controlled empirical study testing whether uncorrelated asset classes possess predictable short-term inefficiencies. I validated edge not against a passive benchmark, but against **10,000 Monte Carlo simulations** of random trade selection — isolating true statistical skill from market noise.
-
----
-
-## Technical Framework
-
-- **Meta-Filter Architecture:** Momentum conviction base signals refined by a high-capacity XGBoost classifier.
-- **Triple Barrier Labeling:** Advanced labeling algorithm that accounts for volatility-adaptive take-profits and stop-losses.
-- **Fractional Differentiation:** Preserving memory in financial time series while achieving stationarity.
-- **Rigorous Validation:** Monte Carlo audits, Kupiec tests, and SHAP-based feature attribution.
-- **High-Performance Data Engineering:** Optimized Polars-based feature extraction and transformation pipeline.
+METR is a personal experiment I built to see if I could use machine learning  to filter out bad trades from a basic momentum strategy. I wanted to test this rigorously, so I compared my model's performance against 10,000 random Monte Carlo simulations to make sure any success wasn't just luck.
 
 ---
 
-## Strategic Performance Analysis: GoldBees
+## How it works
 
-The framework demonstrates significant out-of-sample edge in the Gold ETF (GoldBees), transforming a losing momentum signal into a high-Sharpe strategy.
+- **The Core Idea:** I start with a basic momentum signal (e.g., buy if the price has been going up). Then, I use an XGBoost classifier to look at other indicators and decide whether to actually take the trade or pass on it.
+- **Labeling:** I used a "Triple Barrier" method to label my data. It sets a profit target, a stop loss, and a time limit (like 5 days) for each trade.
+- **Features:** I used Polars to build technical indicators, including some fractional differentiation to make the data stationary while keeping its history.
+- **Validation:** I checked the results using standard metrics like Sharpe ratio and ran Monte Carlo simulations to verify the stats.
+
+---
+
+## Results: GoldBees
+
+The most interesting result came from the Gold ETF (GoldBees). The model was actually able to turn a losing basic momentum signal into a profitable one on unseen data from 2024–2025.
 
 <div align="center">
   <img src="reports/backtest/gold_report.png" width="90%" alt="Gold Performance Report" />
 </div>
 
-### Performance Metrics (OOS 2024–2025)
-| Metric | Result | vs. Baseline |
-| :--- | :--- | :--- |
-| **Out-of-Sample Return** | **+17.92%** | +15.2% |
-| **Sharpe Ratio (Account)** | **1.48** | -0.73 (Baseline) |
-| **Max Drawdown** | **7.99%** | 12.4% |
-| **Win Rate** | **66.1%** | 48.0% |
+### Performance Metrics (Out-of-Sample 2024–2025)
+| Metric | Result |
+| :--- | :--- |
+| **Return** | +17.92% |
+| **Sharpe Ratio** | 1.48 |
+| **Max Drawdown** | 7.99% |
+| **Win Rate** | 66.1% |
 
-### Validation & Hypothesis Testing
-Beyond absolute returns, I audited the probability of statistical luck through rigorous hypothesis testing.
-
-<div align="center">
-  <img src="reports/backtest/gold_monte_carlo.png" width="70%" alt="Gold Monte Carlo" />
-</div>
-
-| Test | P-value | Verdict |
-| :--- | :--- | :--- |
-| **Monte Carlo (10k runs)** | `0.0104` | Significant |
-| **Binomial Test** | `0.0092` | Significant |
-| **Kupiec Reliability** | `0.0126` | Significant |
+I ran a few statistical tests (like a Monte Carlo simulation with 10k runs), and the results for Gold were statistically significant (p-value ~0.01). However, the model didn't find any real edge for Nifty 50 or USD/INR, which makes sense given how efficient and managed those markets are.
 
 ---
 
-## Project Architecture
+## Project Structure
 
 <details>
-<summary>View Technical Structure</summary>
+<summary>Click to view</summary>
 
 ```text
 METR/
-├── data/
-│   ├── raw/                 # Raw OHLC parquet files (yfinance)
-│   └── processed/           # Engineered features and Meta-Target labels
-├── docs/                    # Extensive research notes and methodology
+├── data/                    # Raw and processed data
+├── docs/                    # My notes and methodology
 ├── src/
-│   ├── fetch_data.py        # Automated data ingestion
-│   ├── feature_eng.py       # Technical indicator library (Polars)
-│   ├── triple_barrier.py    # Forward-scanning dynamic labeling
-│   ├── train_trade_filter.py # Primary XGBoost Meta-Model
-│   ├── backtest_engine.py   # Compounded equity curve calculation
-│   └── monte_carlo_audit.py # 10,000-iteration statistical validation
-├── config.yaml              # Global project configuration
-└── README.md                # Project guide
+│   ├── fetch_data.py        # Fetches data from yfinance
+│   ├── feature_eng.py       # Indicator logic using Polars
+│   ├── triple_barrier.py    # Trade labeling logic
+│   ├── train_trade_filter.py # The XGBoost model
+│   ├── backtest_engine.py   # Code to calculate returns
+│   └── monte_carlo_audit.py # Random simulations for testing
+├── config.yaml              # Project settings
+└── README.md                
 ```
 </details>
 
 ---
 
-## Methodology & Research Documentation
+## Documentation
 
-Research observations and results are logged chronologically:
+If you want to read more about what I learned and how I built it:
 
-1. **[Documentation & Methodology](docs/documentation.md):** The core findings and theoretical foundations.
-2. **[Observations](docs/observations.md):** Daily logs and empirical results.
+1. **[Documentation & Methodology](docs/documentation.md):** The main write-up of my findings.
+2. **[Observations](docs/observations.md):** My daily logs while working on the project.
+
 
 ### References
 * **Triple Barrier Labelling Algorithm** by William Santos – *Implementation guidance for volatility-adaptive labeling.*
@@ -115,5 +96,5 @@ Research observations and results are logged chronologically:
 ---
 
 <div align="center">
-  <sub>Built and Researched with Enthusiasm by Mohak Kapoor</sub>
+  <sub>Built by Mohak Kapoor</sub>
 </div>
